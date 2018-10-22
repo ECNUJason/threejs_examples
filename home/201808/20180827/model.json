@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "version": 4.5,
+    "type": "Object",
+    "generator": "Object3D.toJSON"
+  },
+  "geometries": [
+    {
+      "uuid": "E0348FDF-708C-4F23-9CAB-C29238FAC3B8",
+      "type": "CylinderGeometry",
+      "radiusTop": 2,
+      "radiusBottom": 2,
+      "height": 5,
+      "radialSegments": 3
+    }
+  ],
+  "materials": [
+    {
+      "uuid": "6B56FC2D-9CED-4458-8D43-0E63A42B77DB",
+      "type": "MeshNormalMaterial",
+      "depthFunc": 3,
+      "depthTest": true,
+      "depthWrite": true
+    }
+  ],
+  "object": {
+    "uuid": "075FA82E-2C90-4A1D-AC8B-376BDBA2A1E2",
+    "type": "Mesh",
+    "name": "测试",
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "geometry": "E0348FDF-708C-4F23-9CAB-C29238FAC3B8",
+    "material": "6B56FC2D-9CED-4458-8D43-0E63A42B77DB"
+  }
+}

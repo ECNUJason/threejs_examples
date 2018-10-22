@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>threeBSP布尔运算</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+
+    <script src="../../libs/extend/ThreeBSP.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<script>
+
+    $(function () {
+
+        var stats = initStats();
+        var scene,camera,renderer,controls,guiControls,objects;
+
+        // 场景
+        function initScene(){
+            scene = new THREE.Scene();
+        }
+
+        // 相机
+        function initCamera() {
+            camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera.position.set(0, 200, 300);
+            camera.lookAt(new THREE.Vector3(0, 0, 0));
+        }
+
+        // 渲染器
+        function initRenderer() {
+            // 兼容性
+            if (Detector.webgl){
+                renderer = new THREE.WebGLRenderer({antialias : true});
+            } else{
+                renderer = new THREE.CanvasRenderer();
+            }
+            renderer.setClearColor( 0x050505 );
+            renderer.setSize(window.innerWidth , window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            $('#WebGL-output').append(renderer.domElement);
+        }
+
+        // 灯光
+        function  initLight() {
+            var ambientLight = new THREE.AmbientLight( 0xEEE0E5 );
+            scene.add(ambientLight);
+
+            var spotLight = new THREE.SpotLight( 0xffffff );
+            spotLight.position.set(-100, 200,-200);
+            scene.add(spotLight);
+        }
+
+        // 初始化控制器
+        function initControls() {
+            controls = new THREE.TrackballControls(camera, renderer.domElement);
+        }
+
+        // 初始化调试控件
+        function initGui(){
+            guiControls = new function(){
+                // 交集
+                this.intersect = createMesh('intersect');
+                // 并集
+                this.union = createMesh('union');
+                //差集
+                this.subtract = createMesh('subtract');
+            };
+
+            var gui = new dat.GUI();
+            gui.add(guiControls,'intersect');
+            gui.add(guiControls,'union');
+            gui.add(guiControls,'subtract');
+            // 默认关闭
+            gui.close();
+        }
+
+
+        // 初始化object
+        function initObject() {
+            // 创建几何体
+            var cylinderGeometry = new THREE.CylinderGeometry(100,100,20,50,20);
+            var boxGeometry = new THREE.BoxGeometry(100,100,100,30,30);
+
+            // 创建材质
+            var materials1 = new THREE.MeshLambertMaterial({wireframe:true,color : 0x9AFF9A});
+            var materials2 = new THREE.MeshLambertMaterial({wireframe:false,color : 0x9F79EE});
+
+            // 创建Mesh
+            var cylinder = new THREE.Mesh(cylinderGeometry,materials1);
+            var box = new THREE.Mesh(boxGeometry, materials1);
+            scene.add(cylinder);
+            scene.add(box);
+
+            //  将网格模型对象包装成可以进行buer运算的对象(BSP对象)
+            var cylinderBSP = new ThreeBSP(cylinder);
+            var boxBSP = new ThreeBSP(box);
+
+            // 初始化数据放入数组
+            objects = [];
+            objects.push(cylinderBSP);
+            objects.push(boxBSP);
+            objects.push(materials2);
+        }
+
+        // 创建运算后的 mesh
+        function createMesh(type) {
+            function funResult(){
+                if (scene.getObjectByName('mesh') != null){
+                    scene.remove(scene.getObjectByName('mesh'));
+                }
+                var result;
+                switch(type){
+                    case 'subtract': result = objects[0].subtract(objects[1]);
+                        break;
+                    case 'union': result = objects[0].union(objects[1]);
+                        break;
+                    case 'intersect': result = objects[0].intersect(objects[1]);
+                        break;
+                }
+
+                // 将BSP对象转化为Mesh对象
+                var mesh = result.toMesh();
+
+                // 重新为mesh赋值一个纹理材质
+                mesh.material = objects[2];
+                mesh.name = 'mesh';
+                scene.add(mesh);
+            }
+            return funResult;
+        }
+
+        //初始化性能插件
+        function initStats() {
+            var stats = new Stats();
+
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            $('#Stats-output').append(stats.domElement);
+
+            return stats;
+        }
+
+        // 初始化
+        function init() {
+
+            initScene();
+            initCamera();
+            initRenderer();
+            initLight();
+            initObject();
+            initControls();
+            initGui();
+        }
+
+        function update() {
+            controls.update();
+            controls.handleResize();
+            stats.update();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            update();
+        }
+        init();
+        animate();
+    });
+
+</script>
+
+</body>
+</html>

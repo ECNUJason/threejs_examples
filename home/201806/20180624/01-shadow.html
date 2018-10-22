@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>阴影效果</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/build/three-r93.js"></script>
+
+</head>
+<body>
+
+<div id="WebGL-output"></div>
+<script>
+
+    $(function () {
+
+        // 创建场景
+        var scene = new THREE.Scene();
+
+        // 创建相机
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+        // 创建渲染器
+        var webGLRenderer = new THREE.WebGLRenderer();
+
+        // 配置相机
+        camera.position.set(0, 200, 300);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        // 配置渲染器
+        webGLRenderer.antialias = true;
+        webGLRenderer.autoClear = true;
+        webGLRenderer.setClearColor(0x050505);
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        //开启阴影效果
+        webGLRenderer.shadowMap.enabled = false;
+        // webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        webGLRenderer.shadowMap.enabled = true;
+
+        // 创建灯光
+        var ambientLight = new THREE.AmbientLight({color: 0x404040});
+        scene.add(ambientLight);
+
+        // 添加光源
+        var spotLight = new THREE.SpotLight(0xcccccc);
+        spotLight.position.set(-100, 300, 10);
+        spotLight.castShadow = true;
+        //设置阴影分辨率
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
+        scene.add(spotLight);
+
+
+        // 创建平面
+        var planeGeometry = new THREE.PlaneGeometry(400, 400);
+        var planeMaterial = new THREE.MeshLambertMaterial({color: 0x6D6565});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        plane.receiveShadow = true;
+
+        // 绕x轴旋转90度
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.y = -10;
+        plane.position.z = -80;
+        scene.add(plane);
+
+        // 创建球体
+        var sphereGeometry = new THREE.SphereGeometry(5,20,20);
+        var sphereMaterial = new THREE.MeshLambertMaterial({color : Math.random() * 0xffffff});
+        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.y = 30;
+        sphere.position.z = -60;
+        sphere.castShadow = true;
+        scene.add(sphere);
+
+        // 创建立方体
+        var cubeGeometry = new THREE.CubeGeometry(40, 40, 40);
+        var cubeMaterial = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff});
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.x = 10;
+        cube.position.z = 150;
+        cube.castShadow = true;
+        scene.add(cube);
+
+        var pivotPiont = new THREE.Object3D();
+        pivotPiont.add(cube);
+        sphere.add(pivotPiont);
+
+        // 把渲染的页面添加到div
+        $("#WebGL-output").append(webGLRenderer.domElement);
+
+
+        function render(){
+            // 让立方体 绕坐标轴旋转
+            // cube.rotation.x += 0.01;
+            // cube.rotation.y += 0.01;
+            // cube.rotation.z += 0.01;
+            sphere.rotation.y += 0.01;
+            // 开始渲染
+            webGLRenderer.render(scene, camera);
+        }
+
+        //加入动画效果
+        function animate() {
+            render();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    });
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>通过几何体创建点云</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/loaders/OBJLoader.js"></script>
+    <script src="../../libs/examples/js/loaders/MTLLoader.js"></script>
+</head>
+<body>
+<script>
+
+    let scene, camera, renderer, controls;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(30, 0, 10);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数默认 */
+
+    }
+
+    /* 场景中的内容 */
+    let group = new THREE.Group();
+    function initContent() {
+
+        /* 创建一个球体 */
+        let boxGeometry = new THREE.BoxGeometry(5, 10, 5, 20, 30, 20);
+        let cylinderGeometry = new THREE.CylinderGeometry(2, 2, 10, 30, 30);
+
+
+        let box = createPointsCloud(boxGeometry);
+        let cylinder = createPointsCloud(cylinderGeometry);
+
+        box.position.x = -10;
+        cylinder.position.x = 10;
+
+        group.add(cylinder);
+        group.add(box);
+
+        scene.add(group);
+
+
+        let loader = new THREE.OBJLoader();
+        loader.load('../../models/walt/WaltHead.obj', function (object) {
+
+            let geometry = createPointsCloud(object.children[0].geometry);
+
+            let points = createPointsCloud(geometry.geometry);
+
+            points.scale.set(0.15, 0.15, 0.15);
+            points.position.y = -6;
+            group.add(points);
+
+        });
+
+    }
+
+    /* 创建点云 */
+    function createPointsCloud(geometry) {
+
+        /* 精灵材质 */
+        let spriteMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size:0.23,
+            transparent: true,
+            map: generateSprite()
+        });
+
+        let points = new THREE.Points(geometry, spriteMaterial);
+
+        return points;
+
+    }
+
+    /* 创建canvas纹理 */
+    function generateSprite() {
+
+        /* 常见画布并设置宽高 */
+        let canvas = document.createElement('canvas');
+        canvas.width = 8;
+        canvas.height = 8;
+
+        /* 创建图形 */
+        let ctx = canvas.getContext("2d");
+
+        let gradient = ctx.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, 0,
+            canvas.width / 2, canvas.height / 2, canvas.width / 2
+        );
+
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.2, 'rgba(0, 255, 255, 1)');
+        gradient.addColorStop(0.6, 'rgba(0, 0, 64, 1)');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+
+        return texture;
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+        group.rotation.y += 0.01;
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init send...");
+    })();
+
+</script>
+</body>
+</html>

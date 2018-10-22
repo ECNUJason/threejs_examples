@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+
+    if (window.localStorage ) {
+
+        let storge = window.localStorage;
+        let json = storge.getItem('data');
+
+        let data = JSON.parse(json);
+
+        console.log(data);
+
+    } else {
+
+        console.log('浏览器 不支持 localStorge!');
+
+    }
+
+</script>
+</body>
+</html>

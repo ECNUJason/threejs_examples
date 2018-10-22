@@ -1,0 +1,37 @@
+* {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.box {
+    width: 60%;
+    margin: 20px auto;
+    text-align: left;
+    padding: 30px 50px;
+    transition: all 0.5s;
+    background-color: rgba(219, 219, 219, 0.2);
+    border-radius: 10px;
+}
+.box:hover {
+    box-shadow: 2px 2px 20px rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.07);
+    border-radius: 10px;
+}
+
+a {
+    text-decoration: none;
+    /*color:rgba(0, 0, 0, 0.5);*/
+    color: dimgray;
+    font-size: 20px;
+    padding-top: 3px;
+    padding-bottom: 5px;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;/*溢出的部分以省略号的方式显示*/
+    overflow: hidden;/*溢出隐藏*/
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.3);
+}
+
+a:hover {
+    color: #f40;
+}

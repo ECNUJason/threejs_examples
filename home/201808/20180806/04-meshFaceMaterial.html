@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>为每个面定制材质</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, controls, guiControls;
+
+    // 场景
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    // 相机
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(120, 100, 100);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    // 渲染器
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    // 灯光
+    function initLight() {
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-10, 200, 30);
+        scene.add(spotLight);
+
+    }
+
+    // 控制器
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+        // 旋转速度
+        controls.rotateSpeed = 0.05;
+        // 最大可视距离
+        controls.maxDistance = 500;
+        // 最小可视距离
+        controls.minDistance = 100;
+
+    }
+
+    // 调试插件
+    function initGui() {
+
+        guiControls = new function () {
+
+
+        };
+
+        let gui = new dat.GUI();
+
+
+    }
+
+    // 创建一个Group对象
+    let group = new THREE.Group();
+    // 场景中的内容
+    function initContent() {
+
+        // 创建材质数组
+        let matArray = [];
+        matArray.push(new THREE.MeshBasicMaterial({color: 0xFF7F50}));
+        matArray.push(new THREE.MeshBasicMaterial({color: 0x9B30FF}));
+        matArray.push(new THREE.MeshBasicMaterial({color: 0x9ACD32}));
+        matArray.push(new THREE.MeshBasicMaterial({color: 0x63B8FF}));
+        matArray.push(new THREE.MeshBasicMaterial({color: 0xc41e3a}));
+        matArray.push(new THREE.MeshBasicMaterial({color: 0xffffff}));
+
+        // 循环创建立方体
+        for (let x = 0; x < 3; x++){
+
+            for (let y = 0; y < 3; y++){
+
+                for (let z = 0; z < 3; z++){
+
+                    let boxGeometry = new THREE.BoxGeometry(10.8, 10.8, 10.8);
+                    let box = new THREE.Mesh(boxGeometry, matArray);
+                    box.position.set(x * 11 - 11, y * 11 - 11, z * 11 - 11);
+                    group.add(box);
+
+                }
+            }
+        }
+
+        scene.add(group);
+
+    }
+
+    // 性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+    // 更新
+    function update() {
+
+        stats.update();
+        controls.update();
+
+        group.rotation.y += 0.01;
+    }
+
+    // 初始化
+    function init() {
+
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    // 窗口变动触发的方法
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    // 循环渲染
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    // 页面绘制完后加载
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

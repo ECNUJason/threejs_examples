@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<button onclick="lockPointer">锁定鼠标</button>
+<div id="pointer-lock-element"></div>
+
+<script>
+    // 将要使之全屏并锁定指针的元素
+    let elem;
+
+    document.addEventListener("mousemove", function (e) {
+
+        let movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0,
+            movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+
+        // 打印鼠标移动时的增量值
+        // console.log("movementX :"+movementX, "movementY :"+movementY);
+
+    }, false);
+    
+    function fullscreenChange() {
+
+        if (document.webkitCurrentFullScreenElement === elem ||
+            document.mozFullscreenElement === elem ||
+            document.mozFullScreenElement === elem){
+
+            // 元素进入全屏模式, 可以请求指针锁定
+            elem.requestPointerLock = elem.requestPointerLock ||
+                                      elem.mozRequestPointerLock ||
+                                      elem.webkitRequestPointerLock;
+
+            elem.requestPointerLock();
+        }
+    }
+
+    document.addEventListener('fullscreenchange', fullscreenChange, false);
+    document.addEventListener('mozfullscreenchange', fullscreenChange(), false);
+    document.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+
+    function pointerLockChange() {
+
+        if (document.mozPointerLockElement === elem || document.webkitPointerLockElement  === elem){
+            console.log("指针锁定成功!");
+        } else {
+            console.log("指针锁定已丢失!");
+        }
+    }
+
+    document.addEventListener("pointerlockchange", pointerLockChange, false);
+    document.addEventListener("mozpointerlockchange", pointerLockChange, false);
+    document.addEventListener("webkitpointerlockchange", pointerLockChange, false);
+
+    function pointerLockError() {
+        console.log("指针锁定时出错!");
+    }
+
+    document.addEventListener("pointerlockerror", pointerLockError, false);
+    document.addEventListener("mozpointerlockerror", pointerLockError, false);
+    document.addEventListener("webkitpointerlockerror", pointerLockError, false);
+
+    function lockPointer() {
+
+        elem = document.getElementById('pointer-lock-element');
+        // 开始于使元素进入全屏状态, 目前的实现
+        //要求元素在指针锁定模式下, 要处于全屏
+        // 这在以后可能会发生改变
+        elem.requestFullscreen =    elem.requestFullscreen    ||
+                                    elem.mozRequestFullscreen ||
+                                    elem.mozRequestFullScreen || // 较旧的 API 把 ‘S’ 大写
+                                    elem.webkitRequestFullscreen;
+
+        elem.requestFullscreen();
+        
+    }
+
+
+
+</script>
+</body>
+</html>

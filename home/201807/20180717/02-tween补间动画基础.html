@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点击事件</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #label {
+            position: absolute;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            line-height: 1;
+            border-radius: 5px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/controls/OrthographicTrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="js/Tween.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<div id="label"></div>
+<script>
+
+    var stats = initStats();
+    var scene, camera, renderer, controls, light, tween;
+
+
+
+
+    // 场景
+    function initScene() {
+        scene = new THREE.Scene();
+    }
+
+    // 相机
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 400, 600);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    // 渲染器
+    function initRenderer() {
+        if (Detector.webgl) {
+            renderer = new THREE.WebGLRenderer({antialias: true});
+        } else {
+            renderer = new THREE.CanvasRenderer();
+        }
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
+        document.body.appendChild(renderer.domElement);
+    }
+
+    // 初始化模型
+    function initContent() {
+        var helper = new THREE.GridHelper(1200, 50, 0xCD3700, 0x4A4A4A);
+        scene.add(helper);
+
+        var cubeGeometry = new THREE.BoxGeometry(100, 100, 100);
+        var cubeMaterial = new THREE.MeshLambertMaterial({color: 0x9370DB});
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.y = 50;
+        cube.name = "cube";
+        scene.add(cube);
+
+
+    }
+
+    // 窗口变动触发的方法
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // 键盘按下触发的方法
+    function onKeyDown(event) {
+        switch (event.keyCode) {
+            case 13:
+                initCamera();
+                initControls();
+                break;
+        }
+    }
+
+
+    // 初始化轨迹球控件
+    function initControls() {
+
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+    }
+
+    // 初始化灯光
+    function initLight() {
+        light = new THREE.SpotLight(0xffffff);
+        light.position.set(-300, 600, -400);
+        light.castShadow = true;
+
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x5C5C5C));
+    }
+
+    // 初始化 dat.GUI
+    function initGui() {
+        // 保存需要修改相关数据的对象
+        gui = new function () {
+
+        }
+        // 属性添加到控件
+        var guiControls = new dat.GUI();
+    }
+
+    // 初始化性能插件
+    function initStats() {
+        var stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+
+    function AddTween() {
+
+        tween = new TWEEN.Tween(camera.position);
+        tween.to({x:5000, y:200, z:1000}, 5000);
+        tween.easing(TWEEN.Easing.Linear.None);
+
+        var tweenBack = new TWEEN.Tween(camera.position).to({x:100, y:200, z:100}, 5000);
+        tweenBack.easing(TWEEN.Easing.Linear.None);
+
+        tween.chain(tweenBack);
+        tweenBack.chain(tween);
+
+
+        tween.start();
+
+        tween.onUpdate(function () {
+            console.log(this.x);
+        })
+
+    }
+
+    // 更新控件
+    function update() {
+        TWEEN.update();
+
+        stats.update();
+        controls.update();
+        controls.handleResize();
+    }
+
+    // 初始化
+    function init() {
+        initScene();
+        initCamera();
+        initRenderer();
+        initContent();
+        initLight();
+        initControls();
+        initGui();
+        addEventListener('resize', onWindowResize, false);
+        addEventListener('keydown', onKeyDown, false);
+        AddTween();
+
+
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    init();
+    animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>setInterval的使用</title>
+</head>
+<body>
+<div id="dynamicTime"></div>
+<script>
+    // var i = 10;
+    // function fun(){
+    //     console.log('每隔一毫秒调用一次！'+i);
+    //     document.getElementById('dynamicTime').innerHTML = "<h1>倒计时："+i+"</h1>";
+    //     if (i == -1){
+    //         clearInterval(flag);
+    //         document.getElementById('dynamicTime').innerHTML = "<h1> 倒计时结束！ </h1>";
+    //     }
+    //     i--;
+    //
+    //     // var time = new Date();
+    //     //
+    //     // var hour = time.getHours();
+    //     // var minutes = time.getMinutes();
+    //     // var seconds = time.getSeconds();
+    //     //
+    //     // document.getElementById('dynamicTime').innerHTML = "<h1> 当前系统时间 "+hour+" : "+minutes+" : "+seconds+" </h1>"
+    // }
+    //
+    // var flag = setInterval(fun, 1000);
+
+
+    var i = 0;
+    function animation() {
+        requestAnimationFrame(animation);
+        console.log(i++);
+    }
+    animation();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeshLambertMaterial 暗淡并不光亮的材质</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, controls, guiControls;
+    let directionalLightHelper;
+
+    // 场景
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xB0E2FF);
+        scene.fog = new THREE.Fog(scene.background, 1, 5000);
+    }
+
+    // 相机
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(0, 0, 250);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    // 渲染器
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        // 设置渲染器的像素比例，按照设备
+        renderer.setPixelRatio(window.devicePixelRatio);
+        // 渲染范围
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // 开启阴影支持
+        renderer.shadowMap.enabled = true;
+        // 阴影类型
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    // 灯光
+    let ambientLight;
+    let directionalLight;
+
+    function initLight() {
+
+        ambientLight = new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+
+        directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
+        directionalLight.position.set(-50, 50, 10);
+
+        directionalLight.castShadow = true;
+
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+
+        // 为光线设置阴影属性
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 50;
+        directionalLight.shadow.camera.bottom = -50;
+
+        directionalLight.shadow.camera.far = 3500;
+        // 偏差率
+        directionalLight.shadow.bias = -0.001;
+        scene.add(directionalLight);
+
+        directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 10);
+        scene.add(directionalLightHelper);
+
+    }
+
+    // 控制器
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+        // 最大偏移角度
+        controls.maxPolarAngle = 0.49 * Math.PI;
+        // 旋转速度
+        controls.rotateSpeed = 0.05;
+        // 最大可视距离
+        controls.maxDistance = 500;
+        // 最小可视距离
+        controls.minDistance = 100;
+
+    }
+
+    // 调试插件
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.ambientColor = ambientLight.color.getStyle();
+            this.directionalLight = directionalLight.color.getStyle();
+            this.opacity = sphere.material.opacity;
+            this.transparent = sphere.material.transparent;
+            this.color = sphere.material.color.getStyle();
+            this.emissive = sphere.material.emissive.getStyle();
+            this.wireframe = sphere.material.wireframe;
+
+        };
+
+        let gui = new dat.GUI();
+
+        gui.addColor(guiControls,'ambientColor').onChange(function (e) {
+
+            ambientLight.color.setStyle(e);
+
+        });
+
+        gui.addColor(guiControls,'directionalLight').onChange(function (e) {
+
+            directionalLight.color.setStyle(e);
+
+        });
+
+        let materialFolder = gui.addFolder('MeshLambertMaterial');
+        materialFolder.add(guiControls,'opacity',0 ,1).onChange(function (e) {
+
+            sphere.material.opacity = e;
+
+        });
+
+        materialFolder.add(guiControls,'transparent').onChange(function (e) {
+
+            sphere.material.transparent = e;
+
+        });
+
+        materialFolder.addColor(guiControls,'color').onChange(function (e) {
+
+            sphere.material.color.setStyle(e);
+
+        });
+
+        materialFolder.addColor(guiControls,'emissive').onChange(function (e) {
+
+            sphere.material.emissive.setStyle(e);
+
+        });
+
+        materialFolder.add(guiControls,'wireframe').onChange(function (e) {
+
+            sphere.material.wireframe = e;
+
+        });
+
+        materialFolder.open();
+
+    }
+
+    // 场景中的内容
+    let sphere;
+
+    function initContent() {
+
+        let groundGeometry = new THREE.PlaneBufferGeometry(10000, 10000);
+        let groundMaterial = new THREE.MeshLambertMaterial({color: 0x6C7B8B});
+
+        let ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -0.5 * Math.PI;
+        ground.position.y = -80;
+        ground.receiveShadow = true;
+
+        scene.add(ground);
+
+        let sphereGeometry = new THREE.SphereGeometry(30, 50, 50);
+        let sphereMaterial = new THREE.MeshLambertMaterial({color: 0x836FFF});
+        sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+
+        scene.add(sphere);
+
+    }
+
+    // 性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    // 更新
+    function update() {
+
+        stats.update();
+        controls.update();
+        hemiLightHelper.update();
+
+    }
+
+    // 初始化
+    function init() {
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    // 窗口变动触发的方法
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    // 循环渲染
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    // 页面绘制完后加载
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

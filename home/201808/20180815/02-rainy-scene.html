@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sprite 粒子（精灵）示例</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;/* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+
+    let scene, camera, renderer, controls, points;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(30, 0, 80);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数默认 */
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        /* 雪花图片 */
+        let texture = new THREE.TextureLoader().load('../../textures/particles/snowflake2.png');
+
+        let geometry= new THREE.Geometry();
+
+        let pointsMaterial = new THREE.PointsMaterial({
+
+            size:2,
+            transparent:true,
+            opacity:0.8,
+            map:texture,
+            blending:THREE.AdditiveBlending,
+            sizeAttenuation:true,
+            depthTest: false
+        });
+
+        let range = 100;
+
+        for (let i = 0; i < 1500; i++ ) {
+
+            let vertice = new THREE.Vector3(
+                Math.random() * range - range / 2,
+                Math.random() * range * 1.5,
+                Math.random() * range - range / 2);
+            /* 纵向移动速度 */
+            vertice.velocityY = 0.1 + Math.random() / 15;
+            /* 横向移动速度 */
+            vertice.velocityX = (Math.random() - 0.5) / 3;
+
+            /* 将顶点加入几何 */
+            geometry.vertices.push(vertice);
+
+        }
+
+        geometry.center();
+
+        points = new THREE.Points(geometry, pointsMaterial);
+        points.position.y = -30;
+
+        scene.add(points);
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+        let vertices = points.geometry.vertices;
+        vertices.forEach(function (v) {
+
+            v.y = v.y - (v.velocityY);
+            v.x = v.x - (v.velocityX);
+
+            if (v.y <= 0) v.y = 60;
+            if (v.x <= -20 || v.x >= 20) v.velocityX = v.velocityX * -1;
+
+        });
+        /* 顶点变动之后需要更新，否则无法实现雨滴特效 */
+        points.geometry.verticesNeedUpdate = true;
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init send...");
+    })();
+
+</script>
+</body>
+</html>

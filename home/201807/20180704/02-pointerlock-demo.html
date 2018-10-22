@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点锁定控件</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #blocker {
+
+            position: absolute;
+
+            width: 100%;
+            height: 100%;
+
+            background-color: rgba(0, 0, 0, 0.5);
+
+        }
+
+        #instructions {
+
+            width: 100%;
+            height: 100%;
+
+            display: -webkit-box;
+            display: -moz-box;
+
+            -webkit-box-orient: horizontal;
+            -moz-box-orient: horizontal;
+            box-orient: horizontal;
+
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            box-pack: center;
+
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            box-align: center;
+
+            color: #ffffff;
+            text-align: center;
+
+            cursor: pointer;
+
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/controls/PointerLockControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/extend/ThreeBSP.js"></script>
+
+    <script src="../../libs/examples/js/loaders/MTLLoader.js"></script>
+    <script src="../../libs/examples/js/loaders/OBJLoader.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<div id="blocker">
+
+    <div id="instructions">
+        <span style="font-size:40px">单击开始浏览</span>
+        <br/>
+        (W, A, S, D = 移动,  MOUSE = 查看四周)
+    </div>
+
+</div>
+<script>
+
+
+    // 使用说明的文档对象
+    var instructions = document.getElementById('instructions');
+
+
+    if (instructions != null){
+        console.log("div 加载!");
+    }else{
+        document.body.removeChild(document.getElementById('instructions'))
+    }
+
+    // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
+
+    var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+    if (havePointerLock) {
+
+        var element = document.body;
+
+        var pointerlockchange = function (event) {
+
+            if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
+
+                controlsEnabled = true;
+                controls.enabled = true;
+
+                blocker.style.display = 'none';
+
+            } else {
+
+                controls.enabled = false;
+
+                blocker.style.display = 'block';
+
+                instructions.style.display = '';
+
+            }
+
+        };
+
+        var pointerlockerror = function (event) {
+
+            instructions.style.display = '';
+
+        };
+
+        // Hook pointer lock state change events
+        document.addEventListener('pointerlockchange', pointerlockchange, false);
+        document.addEventListener('mozpointerlockchange', pointerlockchange, false);
+        document.addEventListener('webkitpointerlockchange', pointerlockchange, false);
+
+        document.addEventListener('pointerlockerror', pointerlockerror, false);
+        document.addEventListener('mozpointerlockerror', pointerlockerror, false);
+        document.addEventListener('webkitpointerlockerror', pointerlockerror, false);
+
+        // 点击解锁
+        instructions.addEventListener('click', function (event) {
+
+            // 使div隐藏
+            instructions.style.display = 'none';
+
+            // Ask the browser to lock the pointer
+            element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+            element.requestPointerLock();
+
+        }, false);
+
+    } else {
+        // 浏览器不支持
+        instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
+
+    }
+
+    var  stats = initStats();
+    var  scene, camera, renderer, controls, light;
+    // 方向
+    var direction = new THREE.Vector3();
+    // 速度
+    var velocity = new THREE.Vector3();
+
+    var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+
+    var moveForward = false;
+    var moveBack = false;
+    var moveLeft = false;
+    var moveRight = false;
+    var canJump = false;
+
+    var objects = [];
+
+    // 性能加载当前时间
+    var prevTime = performance.now();
+
+    function initScene() {
+        scene = new THREE.Scene();
+    }
+
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        // 加入点锁定控件也可以设置相机的属性
+        // camera.position.set(0, 60, 600);
+        // camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    function initRenderer() {
+        if (Detector.webgl){
+            renderer = new THREE.WebGLRenderer({antialias : true});
+        }else{
+            renderer = new THREE.CanvasRenderer();
+        }
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor( 0x050505 );
+        document.body.appendChild(renderer.domElement);
+    }
+
+    function initContent() {
+
+        var helper = new THREE.GridHelper(1200, 60, 0xCD2626, 0x5C5C5C);
+        scene.add(helper);
+
+        var mtlLoader = new THREE.MTLLoader();
+
+        mtlLoader.setPath('../../data/room/');
+        mtlLoader.load('room3.mtl', function (materials) {
+            var objLoader = new THREE.OBJLoader();
+
+            objLoader.setMaterials(materials);
+            objLoader.setPath('../../data/room/');
+            objLoader.load('room3.obj', function (object) {
+                object.scale.set(20, 20, 20);
+                object.position.y = 55;
+                for (let i = 0; i < object.children.length; i++) {
+
+                    var id = object.children[i].id;
+
+                    // 绑定盒子模型,便于处理位置
+                    object.children[i].geometry.computeBoundingBox();
+                    objects.push(object.children[i]);
+                    // id = 125:地板, 94:两侧墙壁
+                    if (true) {
+                        // 判断是否是网格对象
+                        if (object.children[i].isMesh) {
+                            object.children[i].receiveShadow = true;
+
+                            // objects.push(object.children[i]);
+                            for (let j = 0; j < object.children[i].material.length; j++) {
+                                // 设置双面渲染
+                                object.children[i].material[j].side = THREE.DoubleSide;
+                            }
+                        }
+                    }
+                }
+                scene.add(object);
+            });
+        });
+
+        // 地板
+        var floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+        floorGeometry.rotateX(-Math.PI / 2);
+
+        // 确保每一个面都有自己的顶点
+        floorGeometry = floorGeometry.toNonIndexed();
+
+        var count = floorGeometry.attributes.position.count;
+
+
+        var colors = [];
+        var color = new THREE.Color();
+
+        for (var i = 0; i < count; i++) {
+
+            color.setHSL(Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75);
+            colors.push(color.r, color.g, color.b);
+
+        }
+        floorGeometry.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        // 地板材质
+        var floorMaterial = new THREE.MeshBasicMaterial({vertexColors: THREE.VertexColors});
+
+        var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        //scene.add(floor);
+
+    }
+
+    function initControls() {
+        controls = new THREE.PointerLockControls(camera);
+        scene.add(controls.getObject());
+    }
+
+    function initLight() {
+        light = new THREE.SpotLight( 0xffffff );
+        light.position.set(-300, 600, -400);
+        light.castShadow = true;
+
+        scene.add(light);
+        scene.add(new THREE.AmbientLight( 0xC1C1C1 ));
+    }
+
+    function initGui() {
+        gui = new function () {
+
+        }
+
+        var guiControls = new dat.GUI();
+    }
+
+    // 初始化性能插件
+    function initStats() {
+        var stats= new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    function update() {
+        stats.update();
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // 键盘按下触发的事件
+    function onKeyDown(event) {
+
+        switch (event.keyCode){
+
+            case 87:// W
+            case 38:// up
+                moveForward = true;
+                break;
+
+            case 83:// S
+            case 40:// down
+                moveBack = true;
+                break;
+
+            case 65:// A
+            case 37:// left
+                moveLeft = true;
+                break;
+
+            case 68:// D
+            case 39:// right
+                moveRight = true;
+                break;
+
+            case 32: // space
+                // 弹跳
+                if (canJump === true){
+                    // 位置改变
+                    velocity.y += 350;
+                }
+                // 若为 true的话可以实现跳起并加速落下的效果
+                // canJump = true;
+                canJump = false;
+                break;
+
+        }
+    }
+
+    // 键盘抬起触发的事件
+    function onKeyUp() {
+
+        switch (event.keyCode){
+
+            case 87:// W
+            case 38:// up
+                moveForward = false;
+                break;
+
+            case 83:// S
+            case 40:// down
+                moveBack = false;
+                break;
+
+            case 65:// A
+            case 37:// left
+                moveLeft = false;
+                break;
+
+            case 68:// D
+            case 39:// right
+                moveRight = false;
+                break;
+        }
+    }
+
+    function init() {
+        initScene();
+        initCamera();
+        initRenderer();
+        initContent();
+        initLight();
+        initControls();
+        initGui();
+        addEventListener('resize', onWindowResize, false);
+        addEventListener('keydown', onKeyDown, false);
+        addEventListener('keyup', onKeyUp, false);
+        pointer();
+    }
+
+
+    function pointer() {
+
+        // 射线起点的位置
+        raycaster.ray.origin.copy( controls.getObject().position );
+        // raycaster.ray.origin.y -= 10;
+
+        var intersects = raycaster.intersectObjects( objects );
+        var onObject = intersects.length > 0;
+
+        var time = performance.now();
+        var delta = (time - prevTime) / 1000;
+
+        // 移动速度
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+
+        // 弹跳速度
+        velocity.y -= 9.8 * 100.0 * delta;
+
+        // 方向移动
+        direction.z = Number( moveForward ) - Number( moveBack );
+        direction.x = Number( moveLeft ) - Number( moveRight );
+        // 方向归一化, 确保方向的一致性
+        direction.normalize();
+
+
+        if ( moveForward || moveBack ){
+            velocity.z -= direction.z * 1000.0 * delta;
+        }
+        if ( moveLeft || moveRight ){
+            velocity.x -= direction.x * 1000.0 * delta;
+        }
+
+        if ( onObject === true ) {
+            console.log(controls.getObject().position);
+            velocity.y = Math.max(0, velocity.y);
+            if (moveForward == true){
+                velocity.z = 0;
+            }
+            canJump = true;
+        }
+
+        controls.getObject().translateX( velocity.x * delta );
+        controls.getObject().translateY( velocity.y * delta );
+        controls.getObject().translateZ( velocity.z * delta );
+
+        if (controls.getObject().position.y < 35){
+            velocity.y = 0;
+            controls.getObject().position.y = 35;
+            canJump = true;
+        }
+        prevTime = time;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (objects.length > 0){
+            pointer();
+        }
+        renderer.render(scene, camera);
+        update();
+    }
+    init();
+    animate();
+
+
+</script>
+</body>
+</html>

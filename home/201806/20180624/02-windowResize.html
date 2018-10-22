@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>浏览器窗口变动自适应的方法</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<script>
+
+    $(function () {
+
+        var stats = initStats();
+
+        var scene = new THREE.Scene();
+
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.antialias = true;
+        webGLRenderer.autoClear = true;
+        webGLRenderer.setClearColor( 0x050505 );
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        $("#WebGL-output").append(webGLRenderer.domElement);
+
+        camera.position.set(0,300,600);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        var torusGeometry = new THREE.TorusGeometry(100, 10, 50, 100);
+
+        var torusMaterial = new THREE.MeshNormalMaterial();
+        var torus = new THREE.Mesh(torusGeometry, torusMaterial);
+        torus.position.y = 120;
+        scene.add(torus);
+
+        var helper = new THREE.GridHelper(1200, 60, 0xFF4444, 0x404040);
+        scene.add(helper);
+
+        var orbitControls = new THREE.OrbitControls(camera,webGLRenderer.domElement);
+        orbitControls.enablePan = false;
+
+        function initStats(){
+            var stats = new Stats();
+
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '0px';
+            stats.domElement.style.left = '0px';
+
+            $("#Stats-output").append(stats.domElement);
+
+            return stats;
+        }
+        // 浏览器窗口变动触发的方法
+        function onWindowResize() {
+            // 重新设置相机宽高比例
+            camera.aspect = window.innerWidth / window.innerHeight;
+            // 更新相机投影矩阵
+            camera.updateProjectionMatrix();
+            // 重新设置渲染器渲染范围
+            webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        // 添加window 的resize事件监听
+        window.addEventListener('resize',onWindowResize);
+        //window.onresize = onWindowResize;
+
+        function render() {
+            stats.update();
+            orbitControls.update();
+
+            torus.rotation.x += 0.01;
+            torus.rotation.y += 0.01;
+            torus.rotation.z += 0.01;
+            webGLRenderer.render(scene, camera);
+        }
+        
+        function animate() {
+            render();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    });
+
+</script>
+</body>
+</html>

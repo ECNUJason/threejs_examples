@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Directional Light</title>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="WebGl-output"></div>
+<div id="Stats-output"></div>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, gui;
+    let ambitneLightColor = '#1c1c1c';
+    let pointColor = '#f0f0f0';
+    let target = new THREE.Object3D();
+    target.position = new THREE.Vector3(5, 0, 0);
+
+    // 初始场景
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    // 初始化相机
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-35, 20, 25);
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+    }
+
+    // 初始化渲染器
+    function initRenderer() {
+
+        // 添加抗锯齿效果
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(0xEEEEEE);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // 开启渲染器支持阴影效果
+        renderer.shadowMap.enabled = true;
+
+        // 设置阴影类型
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        document.getElementById('WebGl-output').appendChild(renderer.domElement);
+
+    }
+
+    let ambientLight;
+    let directionalLight;
+    let sphereLightMesh;
+
+    // 初始化灯光
+    function initLight() {
+
+        // 环境光
+        ambientLight = new THREE.AmbientLight(ambitneLightColor);
+
+        scene.add(ambientLight);
+
+        // 平行光
+        directionalLight = new THREE.DirectionalLight(pointColor);
+
+        // 平行光配置
+        directionalLight.position.set(-40, 60, -10);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.camera.near = 2;
+        directionalLight.shadow.camera.far = 200;
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 50;
+        directionalLight.shadow.camera.bottom = -50;
+
+        // 距离和强度
+        directionalLight.distance = 0;
+        directionalLight.intensity = 0.5;
+
+        // 设置阴影的分辨率
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+
+        scene.add(directionalLight);
+
+        // 添加个球体模仿点光源
+        let sphereLight = new THREE.SphereGeometry(0.2);
+        let sphereMaterial = new THREE.MeshBasicMaterial({color: 0xac6c25});
+        sphereLightMesh = new THREE.Mesh(sphereLight, sphereMaterial);
+        sphereLightMesh.castShadow = true;
+        // sphereLightMesh.position.set(3, 20, 3);
+        sphereLightMesh.position = new THREE.Vector3(3, 20, 3);
+        scene.add(sphereLightMesh);
+
+    }
+
+    let plane;
+    let cube;
+    let sphere;
+    // 初始化模型
+    function initContent() {
+
+        let planeGepmetry = new THREE.PlaneGeometry(600, 200, 20, 20);
+        let planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+        plane = new THREE.Mesh(planeGepmetry, planeMaterial);
+        plane.receiveShadow = true;
+
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.set(15, -5, 0);
+        scene.add(plane);
+
+        let cubeGeometry = new THREE.CubeGeometry(4, 4, 4);
+        let cubeMaterial = new THREE.MeshLambertMaterial({color: 0xff3333});
+        cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+        cube.position.set(-4, 3, 0);
+        scene.add(cube);
+
+        let sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+        let sphereMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+        sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+        sphere.position.set(20, 0, 2);
+        scene.add(sphere);
+
+    }
+
+    function initGui() {
+
+        gui = new function () {
+
+            this.rotationSpeed = 0.03;  // 旋转速度
+            this.bouncingSpeed = 0.03;  // 弹跳速度
+            this.ambientColor = ambitneLightColor; // 环境光的颜色
+            this.pointColor = pointColor; // 平行光的颜色
+            this.intensity = 0.5; // 强度
+            this.distance = 0;    // 距离
+            this.angle = 0.1;     // 角度
+            this.debug = false;
+            this.castShadow = true;
+            this.target = "Plane";
+
+        };
+
+        let guiControls = new dat.GUI();
+
+        // 环境光的颜色
+        guiControls.addColor(gui, 'ambientColor').onChange(function (e) {
+            ambientLight.color = new THREE.Color(e);
+        });
+
+        // 平行光的颜色
+        guiControls.addColor(gui, 'pointColor').onChange(function (e) {
+            directionalLight.color = new THREE.Color(e);
+        });
+
+        // 光的强度
+        guiControls.add(gui, 'intensity', 0, 5).onChange(function (e) {
+            directionalLight.intensity = e;
+        });
+
+        // 距离
+        guiControls.add(gui, 'distance', 0, 200).onChange(function (e) {
+            directionalLight.distance = e;
+        });
+
+        // debug 模式
+        guiControls.add(gui, 'debug').onChange(function (e) {
+            if(e){
+                debug = new THREE.CameraHelper(directionalLight.shadow.camera);
+                debug.name = "debug";
+                scene.add(debug);
+            }
+            else{
+                debug = scene.getObjectByName("debug");
+                scene.remove(debug);
+            }
+        });
+
+        // 是否开启接受阴影
+        guiControls.add(gui, 'castShadow').onChange(function (e) {
+            directionalLight.castShadow = e;
+        });
+
+        // 平行光的朝向
+        guiControls.add(gui, 'target', ['Plane', 'Sphere', 'Cube']).onChange(function (e) {
+
+            switch (e) {
+                case "Plane":
+                    directionalLight.target = plane;
+                    break;
+                case "Sphere":
+                    directionalLight.target = sphere;
+                    break;
+                case "Cube":
+                    directionalLight.target = cube;
+                    break;
+            }
+
+        });
+
+    }
+
+    // 初始化性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.setMode(0);
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.getElementById('Stats-output').appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    // 初始化
+    function init() {
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initContent();
+        initGui();
+
+    }
+
+    let step = 0;
+
+    // 更新
+    function update() {
+
+        stats.update();
+
+        cube.rotation.x += gui.rotationSpeed;
+        cube.rotation.y += gui.rotationSpeed;
+        cube.rotation.z += gui.rotationSpeed;
+
+        step += gui.bouncingSpeed;
+        sphere.position.x = 20 + (10 * (Math.cos(step)));
+        sphere.position.y = 2 + (10 * Math.abs(Math.sin(step)));
+
+        sphereLightMesh.position.z = -8;
+        sphereLightMesh.position.y = +(27 * (Math.sin(step / 3)));
+        sphereLightMesh.position.x = 10 + (26 * (Math.cos(step / 3)));
+
+        // 让平行光的位置岁球体的位置移动而移动
+        directionalLight.position.copy(sphereLightMesh.position);
+
+    }
+
+    // 循环渲染
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    init();
+    animate();
+
+</script>
+</body>
+</html>

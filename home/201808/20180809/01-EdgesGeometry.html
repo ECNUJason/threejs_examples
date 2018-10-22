@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EdgesGeometry 边缘几何</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/utils/SceneUtils.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, circle, controls, guiControls;
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 10, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xCCCCCC));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(100, 500, 400);
+        scene.add(spotLight);
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+
+    }
+
+    /* 调试插件 */
+    let gui;
+    function initGui() {
+
+        guiControls = new function () {
+
+
+
+        };
+
+        gui = new dat.GUI({width:300});
+
+
+    }
+
+    /* 场景中的内容 */
+    let cube;
+    function initContent() {
+
+        let cubeGeometry = new THREE.BoxGeometry(50, 50 ,50);
+        let material = new THREE.MeshPhongMaterial();
+        let edgesMtl =  new THREE.LineBasicMaterial({color: 0xff0000});
+
+        cube = new THREE.Mesh(cubeGeometry, material);
+        cube.position.x = -55;
+
+        // THREE.EdgesHelper has been removed. Use THREE.EdgesGeometry instead.
+        let cubeEdges = new THREE.EdgesGeometry(cubeGeometry, 1);
+        // edgesMtl.depthTest = false;
+        let cubeLine = new THREE.LineSegments(cubeEdges, edgesMtl);
+
+        let cylinderGeometry = new THREE.CylinderGeometry(25, 25, 50, 10);
+        let cylinder = new THREE.Mesh(cylinderGeometry, material);
+        cylinder.position.x = 55;
+
+        let cylinderEdges= new THREE.EdgesGeometry(cylinderGeometry, 1);
+        let cylinderLine = new THREE.LineSegments(cylinderEdges, edgesMtl);
+
+        let coneGeometry = new THREE.ConeGeometry(25, 50);
+        let cone = new THREE.Mesh(coneGeometry, material);
+
+        let coneEdges = new THREE.EdgesGeometry(coneGeometry, 1);
+        let coneLine = new THREE.LineSegments(coneEdges, edgesMtl);
+
+        cube.add(cubeLine);
+        cylinder.add(cylinderLine);
+        cone.add(coneLine);
+
+        scene.add(cylinder);
+        scene.add(cube);
+        scene.add(cone);
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    /* 更新 */
+    function update() {
+
+        stats.update();
+        controls.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 窗口变动触发的方法 */
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    /* 页面绘制完后加载 */
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

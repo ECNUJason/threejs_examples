@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>使用材质覆盖属性</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<script>
+
+    $(function () {
+
+        var stats = initStats();
+
+        var scene = new THREE.Scene();
+        // 定义线性雾，密度随着距离的增加而线性增长
+        scene.fog = new THREE.Fog( 0xffffff, 0.015, 100);
+        scene.background = new THREE.Color(0xff0000);
+
+        // 覆盖属性
+        //scene.overrideMaterial = new THREE.MeshLambertMaterial({color : 0xF39600,wireframe:true });
+
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(-30, 40, 30);
+        camera.lookAt(scene.position);
+
+        var webGlRenderer = new THREE.WebGLRenderer();
+
+        webGlRenderer.antialias = true;
+        webGlRenderer.autoClear = true;
+        webGlRenderer.setClearColor(0xEEEEEE);
+        webGlRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGlRenderer.shadowMap.enabled = true;
+        webGlRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        $("#WebGL-output").append(webGlRenderer.domElement);
+
+        var planeGeometry = new THREE.PlaneGeometry(60, 40, 1, 1);
+        var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        plane.receiveShadow = true;
+        plane.rotation.x = -0.5 * Math.PI;
+        scene.add(plane);
+
+        var ambientLight = new THREE.AmbientLight(0x0C0C0C);
+        scene.add(ambientLight);
+
+        var spotLight = new THREE.SpotLight(0xFFFFFF);
+        spotLight.position.set(-40, 60, -10);
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.height = 2048;
+        spotLight.shadow.mapSize.width = 2048;
+        scene.add(spotLight);
+
+        var controls = new function () {
+            this.rotationSpeed = 0.02;
+            this.numberOfObjects = scene.children.length;
+            this.color = scene.fog.color.getStyle();
+
+            this.removeCube = function () {
+                var allChildren = scene.children;
+                var lastObject = allChildren[allChildren.length - 1];
+
+                if (lastObject instanceof THREE.Mesh) {
+                    scene.remove(lastObject);
+                    this.numberOfObjects = scene.children.length;
+                }
+                ;
+            };
+
+            this.addCube = function () {
+
+                var cubeSize = Math.ceil(Math.random() * 3);
+                var cubeGeometry = new THREE.CubeGeometry(cubeSize, cubeSize, cubeSize);
+                var cubeMaterial = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff});
+                var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+
+                // 让随机出现的小立方位置体限制在平面之内
+                cube.position.x = -30 + Math.round((Math.random() * planeGeometry.parameters.width));
+                cube.position.y = 5 + Math.round((Math.random() * 5));
+                cube.position.z = -20 + Math.round((Math.random() * planeGeometry.parameters.height));
+
+                scene.add(cube);
+                this.numberOfObjects = scene.children.length;
+            };
+        };
+
+        var gui = new dat.GUI();
+        gui.add(controls, 'rotationSpeed', 0, 0.5);
+        gui.add(controls, 'addCube');
+        gui.add(controls, 'removeCube');
+        gui.add(controls, 'numberOfObjects').listen();
+        gui.addColor(controls,'color').onChange(function (e) {
+            scene.fog.color.setStyle(e);
+        });
+
+        // 窗口 resize 变动 触发的方法
+        function onWindowResize(){
+            // 相机宽高比例
+            camera.aspect = window.innerWidth / window.innerHeight;
+            // 更新相机矩阵
+            camera.updateProjectionMatrix();
+            // 重新设置渲染范围
+            webGlRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        addEventListener('resize',onWindowResize,false);
+
+        function render() {
+            stats.update();
+            // traverse 方法 在这个对象（scene）和所有子对象(children)像上执行回调
+            scene.traverse(function (e) {
+                if (e instanceof THREE.Mesh && e != plane) {
+                    e.rotation.x += controls.rotationSpeed;
+                    e.rotation.y += controls.rotationSpeed;
+                    e.rotation.z += controls.rotationSpeed;
+                }
+            });
+            webGlRenderer.render(scene, camera);
+        }
+
+        // 初始化性能插件
+        function initStats() {
+            var stats = new Stats();
+
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            $("#Stats-output").append(stats.domElement);
+
+            return stats;
+        }
+
+        function animate() {
+            render();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    });
+
+</script>
+
+</body>
+</html>

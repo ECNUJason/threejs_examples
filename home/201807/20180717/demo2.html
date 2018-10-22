@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Demo</title>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background-color:#1d1d1d;
+            font-family: "Asap", sans-serif;
+            color:#989898;
+            margin:0 10px;
+            font-size:16px;
+        }
+
+        h1, h2, h3 {
+            font-family: "Signika Negative", sans-serif;
+            margin: 10px 0 10px 0;
+            color:#f3f2ef;
+        }
+
+        h1 {
+            font-size:36px;
+        }
+
+        h2 {
+            font-size:30px;
+        }
+
+        h3 {
+            font-size:24px;
+        }
+
+        p{
+            line-height:22px;
+            margin-bottom:16px;
+            width:650px;
+        }
+
+        #demo {
+            height:100%;
+            position:relative;
+        }
+        .box {
+            width:50px;
+            height:50px;
+            position:relative;
+            border-radius:6px;
+            margin-top:4px;
+            display:inline-block;
+        }
+
+        .green{
+            background-color:#6fb936;
+        }
+
+        .orange {
+            background-color:#f38630;
+        }
+        .grey {
+            background-color:#989898;
+        }
+    </style>
+</head>
+<body>
+<h2>TweenMax.staggerTo()</h2>
+<div id="demo">
+    <p>The start times of each animation are staggered by 0.5 seconds</p>
+    <div class="box green"></div>
+    <div class="box grey"></div>
+    <div class="box orange"></div>
+    <div class="box green"></div>
+    <div class="box grey"></div>
+    <div class="box orange"></div>
+    <div class="box green"></div>
+    <div class="box grey"></div>
+    <div class="box orange"></div>
+</div>
+<script type="text/javascript" src="js/TweenMax.js"></script>
+<script type="text/javascript">
+    TweenMax.staggerTo(".box", 1, {rotation:360, y:100}, 0.5);
+
+    //The stagger parameter (0.5) controls the amount of time between the start of each tween. Change it to 0.2, 1 or 3 to see how it works.
+</script>
+</body>
+</html>

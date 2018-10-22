@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+
+    if (window.localStorage ) {
+
+        let storge = window.localStorage;
+        storge.clear();
+
+        let jsonData = {
+            'name':'xiaoming',
+            'age':'18',
+            'sex':'male'
+        };
+
+        let jsonString = JSON.stringify(jsonData);
+
+        storge.setItem('data', jsonString);
+        storge.clear();
+
+    } else {
+
+        console.log('浏览器 不支持 localStorge!');
+
+    }
+
+</script>
+</body>
+</html>

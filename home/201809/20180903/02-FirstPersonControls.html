@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>TrackballControls 轨迹球控件</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/FirstPersonControls.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/loaders/MTLLoader.js"></script>
+    <script src="../../libs/examples/js/loaders/OBJLoader.js"></script>
+    <script src="../../libs/chroma/chroma.js"></script>
+
+</head>
+<body>
+<p id="loading">loading......</p>
+<script>
+
+    let scene, camera, renderer, controls, guiControls;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 5, 20);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0x0c0c0c));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-400, -400, -400);
+
+        let spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 800, 400);
+
+        scene.add(spotLight);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        /* 第一人称控件 */
+        controls = new THREE.FirstPersonControls(camera);
+        /* 属性参数默认 */
+        controls.enabled = true;
+        controls.lookSpeed = 0.02; //鼠标移动查看的速度
+        controls.movementSpeed = 10; //相机移动速度
+        controls.noFly = false;
+        controls.constrainVertical = true; //约束垂直
+        controls.verticalMin = 1.0;
+        controls.verticalMax = 2.0;
+        controls.lon = 0; //进入初始视角x轴的角度
+        controls.lat = 0; //初始视角进入后y轴的角度
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.enabled = controls.enabled; // 是否使用控件
+            this.movementSpeed = controls.movementSpeed; // 控制移动速度
+            this.lookSpeed = controls.lookSpeed; // 鼠标移动查看速度
+            this.lookVertical = true; // 纵向查看
+            this.autoForward = false; // 自动追寻目标
+            this.activeLook = true; // 是否动态查看，关闭后，别的属性不受影响
+            this.moveForward = false;
+            this.moveBackward = false;
+            this.moveLeft = false;
+            this.moveRight = false;
+
+        };
+
+        let gui = new dat.GUI();
+        gui.add(guiControls, 'enabled').onChange(function (e) {
+
+            controls.enabled = e;
+
+        });
+        gui.add(guiControls, 'movementSpeed', 0, 20).onChange(function (e) {
+            controls.movementSpeed = e;
+        });
+        gui.add(guiControls, 'lookSpeed', 0, 0.1).onChange(function (e) {
+            controls.lookSpeed = e;
+        });
+        gui.add(guiControls, 'lookVertical').onChange(function (e) {
+            controls.lookVertical = e;
+        });
+        gui.add(guiControls, 'autoForward').onChange(function (e) {
+            controls.autoForward = e;
+        });
+        gui.add(guiControls, 'activeLook').onChange(function (e) {
+            controls.activeLook = e;
+        });
+
+        gui.add(guiControls, 'moveForward').onChange(function (e) {
+            controls.moveForward = e;
+        });
+        gui.add(guiControls, 'moveBackward').onChange(function (e) {
+            controls.moveBackward = e;
+        });
+        gui.add(guiControls, 'moveLeft').onChange(function (e) {
+            controls.moveLeft = e;
+        });
+        gui.add(guiControls, 'moveRight').onChange(function (e) {
+            controls.moveRight = e;
+        });
+
+
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        let mtlLoader = new THREE.MTLLoader();
+        mtlLoader.load('../../models/obj/city.mtl', function (materials) {
+
+            let objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+
+            objLoader.load('../../models/obj/city.obj', function (object) {
+
+                let scale = chroma.scale(['red', 'green', 'blue']);
+
+                setRandomColor(object, scale);
+                console.log(object);
+                scene.add(object);
+
+                document.getElementById('loading').style.display = 'none';
+
+            });
+
+        });
+
+    }
+
+    function setRandomColor(object, scale) {
+
+        let children = object.children;
+
+        if (children && children.length > 0) {
+
+            children.forEach(function (e) {
+
+                setRandomColor(e, scale);
+
+            });
+
+        } else {
+
+            if (object instanceof THREE.Mesh) {
+
+                for (let i = 0; i < object.material.length; i++) {
+
+                    let material = object.material;
+
+                    if (material[i].name.indexOf('building') === 0) {
+
+                        material[i].emissive = new THREE.Color(scale(Math.random()).hex());
+                        material[i].transparent = true;
+                        material[i].opacity = 0.7;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        controls.handleResize();
+
+    }
+
+    let clock = new THREE.Clock();
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+        controls.update(clock.getDelta());
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init end...");
+    })();
+
+</script>
+</body>
+</html>

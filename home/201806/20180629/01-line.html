@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制线条</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+<script>
+    var stats = initStats();
+
+    var scene, camera, renderer, controls, light, gui;
+
+    function initScene() {
+        scene = new THREE.Scene();
+    }
+
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 200, 300);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    function initRenderer() {
+        if (Detector.webgl){
+            renderer = new THREE.WebGLRenderer({antialias : true,autoClear : true});
+        }else{
+            renderer = new THREE.CanvasRenderer();
+        }
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor( 0x050505 );
+
+        document.body.appendChild( renderer.domElement );
+    }
+
+    function initControls() {
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+    }
+
+    function initLight() {
+        light = new THREE.SpotLight( 0xEAEAEA );
+        light.position.set(-100, 200, 200);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight( 0x3D3D3D ));
+    }
+
+    function initContent() {
+        var helper = new THREE.GridHelper(1200, 60, 0xFF4444, 0x404040 );
+        scene.add(helper);
+
+        // 构造线段
+        var lineGeometry = new THREE.Geometry();
+        lineGeometry.vertices.push(new THREE.Vector3(-200, -200, -200));
+        lineGeometry.vertices.push(new THREE.Vector3(200, 200, 200));
+
+        var lineMaterial = new THREE.LineDashedMaterial({
+            color : 0x9B30FF
+        });
+        var line = new THREE.Line(lineGeometry, lineMaterial);
+        // 计算线条间的距离
+        line.computeLineDistances();
+        scene.add(line);
+
+    }
+    
+    function initStats() {
+        var stats = new Stats();
+
+        stats.setMode(0);
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    function update() {
+        stats.update();
+        controls.update();
+        controls.handleResize();
+    }
+
+    function init() {
+        initScene();
+        initRenderer();
+        initCamera();
+        initLight();
+        initControls();
+        initContent();
+        initStats();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+    init();
+    animate();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CircleGeometry 二维圆</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/utils/SceneUtils.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, circle, controls, guiControls;
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 10, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+
+    }
+
+    /* 调试插件 */
+    let gui;
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.radius = circle.children[0].geometry.parameters.radius;
+            this.segments = circle.children[0].geometry.parameters.segments;
+            this.thetaStart = circle.children[0].geometry.parameters.thetaStart;
+            this.thetaLength  = circle.children[0].geometry.parameters.thetaLength;
+            this.redraw = function () {
+
+                scene.remove(circle);
+
+                circle = createMesh(new THREE.CircleGeometry(guiControls.radius, guiControls.segments, guiControls.thetaStart, guiControls.thetaLength));
+
+                scene.add(circle);
+
+            };
+
+        };
+
+        gui = new dat.GUI({width:300});
+
+        gui.add(guiControls, 'radius',0, 200).onChange(guiControls.redraw);
+        gui.add(guiControls, 'segments',3, 90).onChange(guiControls.redraw);
+        gui.add(guiControls, 'thetaStart',0, 12).onChange(guiControls.redraw);
+        gui.add(guiControls, 'thetaLength',0, Math.PI * 2).onChange(guiControls.redraw);
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        circle = createMesh(new THREE.CircleGeometry(50, 40, 3, 2*Math.PI));
+        scene.add(circle);
+
+    }
+
+    /* 创建网格 */
+    function createMesh(geometry) {
+
+        let meshMaterial = new THREE.MeshNormalMaterial();
+        meshMaterial.side = THREE.DoubleSide;
+
+        let wireFrameMaterial = new THREE.MeshBasicMaterial();
+        wireFrameMaterial.wireframe = true;
+
+        let circle = new THREE.SceneUtils.createMultiMaterialObject(geometry, [meshMaterial, wireFrameMaterial]);
+
+        return circle;
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    /* 更新 */
+    function update() {
+
+        stats.update();
+        controls.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 窗口变动触发的方法 */
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    /* 页面绘制完后加载 */
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

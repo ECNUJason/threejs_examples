@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TweenMax缓动动画插件</title>
+    <script src="js/jquery-1.9.1.js"></script>
+    <script src="js/TweenMax.js"></script>
+    <script src="js/EasePack.js"></script>
+    <style>
+
+        #div1{
+            width: 100px;
+            height: 100px;
+            background-color: orangered;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #play{
+            top: 600px;
+            left: 600px;
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="div1"></div>
+<input id="play" type="button" value="play">
+<input id="stop" type="button" value="stop">
+<input id="reverse" type="button" value="reverse">
+
+
+<script>
+
+    $(function () {
+
+        let t = new TimelineMax();
+
+
+
+        // t.to("#div1", 1, {left : 300, width: 300, height :300});
+
+        t.to("#div1", 1, {left: 1000, ease:EaseLookup.find("backEaseInOut")});
+        // t.to("#div1", 1, {width: 300});
+        // t.to("#div1", 1, {height:300});
+        // t.to("#div1", 1, {top:300});
+        // t.to("#div1", 1, {rotationZ:180});
+        // t.to("#div1", 1, {rotationX:180});
+        // t.to('#div1', 1, {opacity:0.5}, 1.7);
+        // t.to("#div1", 1, {left: 0});
+        // t.to("#div1", 1, {width:10});
+        // t.to("#div1", 1, {height:10});
+
+        // t.stop();
+
+        $('#play').click(function () {
+
+            t.play();
+
+        });
+
+        $('#stop').click(function () {
+
+            t.stop();
+
+        });
+
+        $('#reverse').click(function () {
+
+            t.reverse();
+
+        });
+
+
+
+
+    })
+
+</script>
+
+</body>
+</html>

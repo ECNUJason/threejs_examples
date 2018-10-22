@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>二维字体</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+<script>
+
+    var stats = initStats();
+    var scene, camera, renderer, controls, light;
+
+    function initScene() {
+        scene = new THREE.Scene();
+    }
+
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 60, 600);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    function initRenderer() {
+        if (Detector.webgl) {
+            renderer = new THREE.WebGLRenderer({antialias: true});
+        } else {
+            renderer = new THREE.CanvasRenderer();
+        }
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
+        document.body.appendChild(renderer.domElement);
+    }
+
+    function initContent() {
+        var helper = new THREE.GridHelper(1200, 50, 0xCD3700, 0x4A4A4A);
+        scene.add(helper);
+
+        var text = "three.js";
+        var loader = new THREE.FontLoader();
+        loader.load('../../libs/examples/fonts/gentilis_regular.typeface.json', function (font) {
+            // 材质
+            var fontMaterial = new THREE.MeshLambertMaterial({
+                color: 0x912CEE,
+                side: THREE.DoubleSide
+            });
+            var planeMaterial = new THREE.MeshLambertMaterial({
+                color: 0x545454,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+
+            var planeGeometry = new THREE.PlaneGeometry(600, 300);
+            var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.position.y += 40;
+            scene.add(plane);
+
+            // 生成二维字体模型
+            var shapes = font.generateShapes(text, 100, 1);
+            var fontGeometry = new THREE.ShapeGeometry(shapes);
+
+            // 绑定盒子模型
+            fontGeometry.computeBoundingBox();
+            var font = new THREE.Mesh(fontGeometry, fontMaterial);
+            // x = 0,位置
+            font.position.x = -0.5 * (fontGeometry.boundingBox.max.x - fontGeometry.boundingBox.min.x);
+            font.position.z += 1;
+            scene.add(font);
+        });
+    }
+
+    function initControls() {
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+        controls.noPan = true;
+    }
+
+    function initLight() {
+        light = new THREE.SpotLight(0xffffff);
+        light.position.set(-300, 600, -400);
+        light.castShadow = true;
+
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xC1C1C1));
+    }
+
+    function initGui() {
+        gui = new function () {
+
+        }
+
+        var guiControls = new dat.GUI();
+    }
+
+    // 初始化性能插件
+    function initStats() {
+        var stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    function update() {
+        stats.update();
+        controls.update();
+        controls.handleResize();
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function init() {
+        initScene();
+        initCamera();
+        initRenderer();
+        initContent();
+        initLight();
+        initControls();
+        initGui();
+        addEventListener('resize', onWindowResize, false);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    init();
+    animate();
+
+</script>
+</body>
+</html>

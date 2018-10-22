@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+
+    if (window.localStorage ) {
+
+        let storge = window.localStorage;
+
+        /* 写入 */
+        // 写入字段a
+        storge['a'] = 1;
+
+        // 写入字段b
+        storge.b = 2;
+
+        // 写入字段c
+        storge.setItem('c', 3);
+
+        /* 读取 */
+        // 方式一
+        console.log(storge.a);
+
+        // 方式二
+        console.log(storge['b']);
+
+        // 方式三
+        console.log(storge.getItem('c'));
+
+        console.log('--------------------')
+
+        for (let i = 0; i < storge.length; i++ ) {
+
+            let key = storge.key(i);
+            console.log('key: '+key+' value: '+storge[key]);
+
+        }
+
+    } else {
+
+        console.log('浏览器 不支持 localStorge!');
+
+    }
+
+</script>
+</body>
+</html>

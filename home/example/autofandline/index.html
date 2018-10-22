@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>寻线运动</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <!-- 加入补间动画 -->
+    <script src="../../libs/tween/Tween.js"></script>
+</head>
+<body>
+<script>
+
+    let scene, camera, renderer, controls;
+    let stats = initStats();
+
+    /* 地面网格所需变量 */
+    let length = 200;  /*地面网格线段长度*/
+
+    /* 顶点数组和事件添加标识 */
+    let pointsArray = [];
+    let window_mouse = true;
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 200, 250);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        let ambientLight = new THREE.AmbientLight(0x333333);
+        scene.add(ambientLight);
+
+        let directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(100, 300, 200);
+        scene.add(directionalLight);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    }
+
+    /* 场景内容 */
+    function initContent() {
+
+        let geometry = new THREE.Geometry();/* 简单基础几何 */
+        let lineMaterial = new THREE.LineBasicMaterial({color: 0x808080});/* 基础线材质 */
+
+        let planeGeometry = new THREE.PlaneGeometry(length, 10);/* 平面 width：200,、height：10 */
+        let planeMaterial = new THREE.MeshBasicMaterial({color: 0xD9D9D9, side: THREE.DoubleSide});/* 平面材质 */
+
+        geometry.vertices.push(new THREE.Vector3(-length / 2, 0, 0));/* 顶点(-100, 0, 0) */
+        geometry.vertices.push(new THREE.Vector3(length / 2, 0, 0)); /* 顶点( 100, 0, 0) */
+
+        /* 循环创建线段 */
+        for (let i = 0; i <= length / 10; i++){
+
+            /* 横向线段 */
+            let lineX = new THREE.Line(geometry, lineMaterial);
+            lineX.position.z = (i * 10) - length / 2;
+            scene.add(lineX);
+
+            /* 纵向线段 */
+            let lineY = new THREE.Line(geometry, lineMaterial);
+            lineY.rotation.y = 0.5 * Math.PI;
+            lineY.position.x = (i * 10) - length / 2;
+            scene.add(lineY);
+
+        }
+
+        /* 创建包围平面 */
+        let planeX_left = new THREE.Mesh(planeGeometry, planeMaterial);
+        planeX_left.rotation.y = 0.5 * Math.PI;
+        planeX_left.position.x = -length / 2;
+
+        let planeX_right = planeX_left.clone();
+        planeX_right.position.x = length / 2;
+
+        let planeY_top = new THREE.Mesh(planeGeometry, planeMaterial);
+        planeY_top.position.z = -length / 2;
+
+        let planeY_bottom = planeY_top.clone();
+        planeY_bottom.position.z = length / 2;
+
+        scene.add(planeY_bottom);
+        scene.add(planeY_top);
+        scene.add(planeX_left);
+        scene.add(planeX_right);
+
+        /* 四个包围面的位置 y轴向上5 */
+        scene.traverse(function (object) {
+
+            if (object.isMesh){
+
+                if (object.geometry.type === 'PlaneGeometry'){
+
+                    object.position.y = 5;
+
+                }
+
+            }
+
+        });
+
+    }
+
+    /* 获取射线与平面相交的交点 */
+    function getIntersects(event) {
+
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        let normal = new THREE.Vector3(0, 1, 0);
+        /* 创建平面 */
+        let planeGround = new THREE.Plane(normal, 0);
+
+        /* 从相机发出一条射线经过鼠标点击的位置 */
+        raycaster.setFromCamera(mouse, camera);
+
+        /* 获取射线 */
+        let ray = raycaster.ray;
+
+        /* 计算相机到射线的对象，可能有多个对象，返回一个数组，按照距离相机远近排列 */
+        let intersects = ray.intersectPlane(planeGround);
+
+        /* 返回向量 */
+        return intersects;
+
+    }
+
+    /* 鼠标按下事件 */
+    let first_sphere = true;
+    function onMouseDown(event) {
+
+        /* 获取相机发出的射线与 Plane 相交点*/
+        let intersects = getIntersects(event);
+
+        /* 鼠标左键按下时，创建点和线段 */
+        if (event.button === 0) {
+
+            if (!window_mouse){
+
+                window.addEventListener('mousemove', onMouseMove, false);
+
+                /* 依据 windwo_mouse 标识 避免事件的重复添加 */
+                window_mouse = true;
+
+            }
+
+            /* 判断交点是否在 x(-100, 100) ，z(-100, 100)(平面)之间 */
+            if (Math.abs(intersects.x) < length / 2 && Math.abs(intersects.z) < length / 2){
+
+                /* 若交点此时在平面之内则创建点（Points） */
+                let pointsGeometry = new THREE.Geometry();
+                pointsGeometry.vertices.push(intersects);
+
+                let pointsMaterial = new THREE.PointsMaterial({color:0xff0000, size: 3});
+                let points = new THREE.Points(pointsGeometry, pointsMaterial);
+
+                pointsArray.push(points);
+
+                /* 创建线段 */
+                let lineGeometry = new THREE.Geometry();
+                let lineMaterial = new THREE.LineBasicMaterial({color: 0x00ff00});
+
+                if (pointsArray.length >= 2) {
+
+                    lineGeometry.vertices.push(pointsArray[0].geometry.vertices[0], pointsArray[1].geometry.vertices[0]);
+
+                    let line = new THREE.Line(lineGeometry, lineMaterial);
+                    line.castShadow = true;
+                    pointsArray.shift();
+                    scene.add(line);
+
+                }
+
+                /* 一条连续的线段的开始端的球体几何 */
+                if (first_sphere) {
+
+                    /* 创建球体 */
+                    let sphereGeometry = new THREE.SphereGeometry(5, 20, 20);
+                    let sphereMaterial = new THREE.MeshLambertMaterial({color: 0xB23AEE});
+
+                    let sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                    sphere.position.set(intersects.x, intersects.y + 5, intersects.z);
+                    scene.add(sphere);
+
+                    first_sphere = false;
+
+                }
+
+                scene.add(points);
+
+            }
+
+        }
+
+        /* 鼠标右键按下时 回退到上一步的点，并结束绘制以，动画结束之后方能再次绘制 */
+        if (event.button === 2) {
+
+            /* 绘制结束，移除鼠标点击和移动事件 */
+            window.removeEventListener('mousemove', onMouseMove, false);
+            window.removeEventListener('mousedown', onMouseDown, false);
+
+            /* 移除事件之后，要设置为 false 为了避免事件的重复添加 */
+            window_mouse = false;
+
+            /* 鼠标左键未点击时线段的移动状态 */
+            if (scene.getObjectByName('line_move')) {
+
+                scene.remove(scene.getObjectByName('line_move'));
+
+                /* 删除数组中的元素，否则的话再次重绘会链接之前的点接着重绘 */
+                pointsArray.shift();
+
+                /* 结束绘制之后，再次绘制仍然需要添加一个球体 */
+                first_sphere = true;
+
+            }
+
+            deleteLast();/* 删除最后的点和球，并恢复鼠标点击和键盘事件 */
+
+        }
+
+    }
+
+    /* 鼠标移动事件 */
+    function onMouseMove(event) {
+
+        let intersects = getIntersects(event);
+
+        /* 判断交点是否在 x(-100, 100) ，z(-100, 100)(平面)之间 */
+        if (Math.abs(intersects.x) < length / 2 && Math.abs(intersects.z) < length / 2) {
+
+            /* 鼠标左键未点击时线段的移动状态 */
+            if (scene.getObjectByName('line_move')) {
+
+                scene.remove(scene.getObjectByName('line_move'));
+
+            }
+            /* 创建线段 */
+            let lineGeometry = new THREE.Geometry();
+            let lineMaterial = new THREE.LineBasicMaterial({color: 0x00ff00});
+
+            if (pointsArray.length > 0){
+
+                lineGeometry.vertices.push(pointsArray[0].geometry.vertices[0]);
+
+                let mouseVector3 = new THREE.Vector3(intersects.x, 0, intersects.z);
+
+                lineGeometry.vertices.push(mouseVector3);
+
+                let line = new THREE.Line(lineGeometry, lineMaterial);
+                line.name = 'line_move';
+
+                scene.add(line);
+
+            }
+
+        }
+
+    }
+
+    /* 键盘按下事件 */
+    function onKeyDown(event) {
+
+        /* ESC键 回退上一步绘制，结束绘制*/
+        if (event.keyCode === 27){/* Esc 键 */
+
+            window.removeEventListener('mousemove', onMouseMove, false);
+
+            /* 移除事件之后，要设置为 false 为了避免 mousemove 事件的重复添加 */
+            window_mouse = false;
+
+            /* 鼠标左键未点击时线段的移动状态 */
+            if (scene.getObjectByName('line_move')) {
+
+                scene.remove(scene.getObjectByName('line_move'));
+
+                /* 删除数组中的元素，否则的话再次重绘会链接之前的点接着重绘 */
+                pointsArray.shift();
+
+            }
+
+            let length = scene.children.length - 1;
+            /* 按步骤移除点和线段 */
+            if (scene.children[length].isLine || scene.children[length].isPoints){
+
+                scene.children.pop();
+                length = scene.children.length - 1;
+
+                /* 若最后一项不是线段或者点就不移除 */
+                if (!scene.children[length].isMesh) {
+
+                    scene.children.pop();
+
+                }
+
+            }
+
+            deleteLast();/* 删除最后的点和球，并恢复鼠标点击和键盘事件 */
+
+        }
+
+        if (event.keyCode === 32) {/* space 键 */
+
+            /* 开始动画的时候不允许 esc 操作， 所以此时移除键盘事件 */
+            window.removeEventListener('keydown', onKeyDown, false);
+
+            /* 当 window_mouse 为 false 时（为false时说明结束绘制）开始移动，否则不移动*/
+            if (!window_mouse) {
+
+                console.log('球体开始寻线运动！');
+
+                let points = [];
+                let sphere = null;
+
+
+                /* 取出球体 */
+                scene.traverse(function (object) {
+
+                    if (object.geometry instanceof  THREE.SphereGeometry) {
+
+                        sphere = object;
+
+                    }
+
+                });
+
+                /* 取出点 */
+                scene.traverse(function (object) {
+
+                    if (object.isPoints) {
+
+                        points.push(object);
+
+                    }
+
+                });
+
+                /* 动画数组 */
+                let tweens = [];
+
+                /* 当点的数量大于 1 的时候才可以进行动画 */
+                if (points.length > 1 ){
+
+                    for (let i = 0; i < points.length; i++ ) {
+
+                        tweens.push(new TWEEN.Tween(sphere.position));/* 此时创建了 points.length 个 TWEEN 对象 */
+
+
+                        if (i < points.length - 1) {
+
+                            tweens[i].to({x:points[i + 1].geometry.vertices[0].x, z:points[i + 1].geometry.vertices[0].z}, 2000);/* 规定去向 */
+
+                        }
+
+                    }
+                    /* 是动画链接到一起 */
+                    for (let i = 0; i < points.length - 1; i++) {
+
+                        tweens[i].chain(tweens[i + 1]);
+
+                    }
+
+                    /* 从第一个开始执行 */
+                    tweens[0].start();
+
+                    /* onUpdate 类似 animation 执行动画的过程中所做的事 在tween每次被更新后执行 */
+                    tweens[0].onUpdate(function (object) {
+
+                        console.log("elapsed-time: "+object);
+                        console.log("x: "+Math.round(sphere.position.x)+" ,y: "+Math.round(sphere.position.y)+" ,z:"+Math.round(sphere.position.z));
+
+                    });
+
+                    /* 走完路程执行的操作 */
+                    tweens[tweens.length - 2].onComplete(function () {
+
+                        console.log('球体寻线结束！');
+
+                        for (let i = 0; i < scene.children.length; i++) {
+
+                            let object = scene.children[i];
+
+                            if ((object.type === "Points") || (object.castShadow === true)|| (object.geometry instanceof THREE.SphereGeometry)) {
+
+                                scene.remove(object);
+                                /* i-- 作用：用来控制scene.children.length不断减小而 i 却不断变大的问题，否则会导致无法完全删除元素 */
+                                i--;
+                            }
+
+                        }
+
+                        /* 移除完线段、点、球结束后 再次添加点击事件 */
+                        window.addEventListener('mousedown', onMouseDown, false);
+
+                        /* 动画结束之后， 在添加键盘事件 */
+                        window.addEventListener('keydown', onKeyDown, false);
+
+                    });
+
+                }
+
+            }
+
+        }
+
+    }
+    /* 当场景中只有一个球和一个点的时候执行删除操作 */
+    function deleteLast() {
+
+        let i = 0;
+        scene.traverse(function (object) {
+
+            if (object.isPoints) {
+                i++;
+            }
+
+        });
+        if (i < 2) {
+
+            /* 删除点和球 */
+            for (let i = 0; i < scene.children.length; i++) {
+
+                let object = scene.children[i];
+
+                if ((object.type === "Points") || (object.geometry instanceof THREE.SphereGeometry)) {
+
+                    scene.remove(object);
+                    /* i-- 作用：用来控制scene.children.length不断减小而 i 却不断变大的问题，否则会导致无法完全删除元素 */
+                    i--;
+                }
+
+            }
+
+            /* 移除完线段、点、球结束后 再次添加点击事件 */
+            window.addEventListener('mousedown', onMouseDown, false);
+
+            /* 动画结束之后， 在添加键盘事件 */
+            window.addEventListener('keydown', onKeyDown, false);
+
+        }
+
+    }
+
+
+    /* 更新数据 */
+    function update() {
+
+        TWEEN.update();
+
+        stats.update();
+        controls.update();
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.setMode(0);
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.right = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口自动适应 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 循环调用 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        /* 兼容性判断 */
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initContent();
+        initControls();
+
+        /* 事件监听 */
+        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener('mousedown', onMouseDown, false);/* 使用mousedown的时候可以判断出点击的鼠标左右键之分 */
+        window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('keydown', onKeyDown, false);/* 使用事件的时候要把前面的on给去掉 */
+
+    }
+
+    /* 初始加载 */
+    (function () {
+
+        console.log('three init start...');
+
+        init();
+        animate();
+
+        console.log('three init end...');
+
+    })();
+
+</script>
+</body>
+</html>

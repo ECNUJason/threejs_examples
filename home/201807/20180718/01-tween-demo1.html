@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/extend/THREEx.WindowResize.js"></script>
+    <script src="../../libs/tween/Tween.js"></script>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+</head>
+<body>
+
+<script>
+    let scene, camera, renderer, controls;
+    let stats = initStats();
+    let tweens = [];
+
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 300, 600);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    function initControls() {
+
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+    }
+
+    function initModels() {
+
+        let helper = new THREE.GridHelper(1200, 60, 0xCD3333, 0x4A4A4A);
+        // scene.add(helper);
+
+        let cubeGeometry = new THREE.SphereGeometry(20, 50, 50);
+        let cubeMaterial = new THREE.MeshLambertMaterial({color: 0x9370DB});
+        let cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.y = 25;
+        cube.position.x = -400;
+        cube.name = 'cube';
+        scene.add(cube);
+
+    }
+
+    function initLight() {
+
+        let spotLight = new THREE.SpotLight(0xE3E3E3);
+        spotLight.position.set(-100, 200, 300);
+        scene.add(spotLight);
+
+        scene.add(new THREE.AmbientLight(0xB3B3B3));
+
+    }
+
+    function initStats() {
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    function initTween() {
+
+        let tweenSphere = new TWEEN.Tween(scene.getObjectByName('cube').position);
+        tweenSphere.to({x:400}, 2000);
+        // tweenCube.easing(TWEEN.Easing.Elastic.InOut);
+        tweenSphere.start();
+        tweenSphere.onUpdate(function () {
+            console.log("x: "+this.x);
+        });
+
+        let tweenSphereBack = new TWEEN.Tween(scene.getObjectByName('cube').position);
+        tweenSphereBack.to({x:-400}, 2000);
+        tweenSphere.chain(tweenSphereBack);
+        tweenSphereBack.chain(tweenSphere);
+
+
+    }
+
+    function init() {
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initControls();
+        initModels();
+        initLight();
+        initTween();
+        THREEx.WindowResize(renderer, camera);
+
+    }
+
+    function update() {
+        TWEEN.update();
+        stats.update();
+        controls.update();
+
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    init();
+    animate();
+
+
+</script>
+
+</body>
+</html>

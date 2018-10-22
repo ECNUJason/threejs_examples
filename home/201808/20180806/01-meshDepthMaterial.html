@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeshDepthMaterial 深度着色材质</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, guiControls;
+
+    // 场景
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+    }
+
+    // 相机
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 20, 150);
+        camera.position.set(-50, 40, 50);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    // 渲染器
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+        // 渲染范围
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    // 调试插件
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.sceneBackground = scene.background.getStyle();
+            this.cameraNear = camera.near;
+            this.cameraFar = camera.far;
+            this.numberOfObjects = scene.children.length;
+
+            this.addCube = function () {
+
+                let cubeSize = Math.ceil(3 + (Math.random() * 3));
+                let cubeGeometry = new THREE.CubeGeometry(cubeSize, cubeSize, cubeSize);
+                let cubeMaterial = new THREE.MeshDepthMaterial();
+                let cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.castShadow = true;
+
+                cube.position.x = -60 + Math.round((Math.random() * 100));
+                cube.position.y = Math.round((Math.random() * 10));
+                cube.position.z = -100 + Math.round((Math.random() * 150));
+
+                scene.add(cube);
+                this.numberOfObjects = scene.children.length;
+
+            };
+
+            this.removeCube = function () {
+
+                let allChildren = scene.children;
+                let lastObject = allChildren[allChildren.length - 1];
+
+                if (lastObject.isMesh) {
+
+                    scene.remove(lastObject);
+
+                    this.numberOfObjects = scene.children.length;
+
+                }
+
+            }
+
+        };
+
+        let gui = new dat.GUI({width: 300});
+
+        gui.addColor(guiControls, 'sceneBackground').onChange(function (e) {
+
+            scene.background.setStyle(e);
+
+        });
+
+        gui.add(guiControls, 'cameraNear', 5, 30).onChange(function (e) {
+
+            camera.near = e;
+            console.log("camera near :" + camera.near);
+
+        });
+
+        gui.add(guiControls, 'cameraFar', 150, 500).onChange(function (e) {
+
+            camera.far = e;
+            console.log("camera far :" + camera.far);
+        });
+
+        gui.add(guiControls, 'addCube');
+        gui.add(guiControls, 'removeCube');
+
+    }
+
+    // 性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    // 更新
+    function update() {
+
+        stats.update();
+        // 更新相机矩阵投影, 不然不能通过 gui 来更新相机的远近距离
+        camera.updateProjectionMatrix();
+
+        scene.traverse(function (e) {
+
+            if (e.isMesh) {
+
+                e.rotation.x += 0.02;
+                e.rotation.y += 0.02;
+                e.rotation.z += 0.02;
+
+            }
+
+        });
+
+    }
+
+    // 初始化
+    function init() {
+
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initGui();
+
+        let i = 0;
+        while (i < 20) {
+
+            guiControls.addCube();
+            i++;
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    // 窗口变动触发的方法
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    // 循环渲染
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    // 页面绘制完后加载
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

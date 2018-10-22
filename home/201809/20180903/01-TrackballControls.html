@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>TrackballControls 轨迹球控件</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/loaders/MTLLoader.js"></script>
+    <script src="../../libs/examples/js/loaders/OBJLoader.js"></script>
+    <script src="../../libs/chroma/chroma.js"></script>
+
+</head>
+<body>
+<p id="loading">loading......</p>
+<script>
+
+    let scene, camera, renderer, controls, guiControls;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(100,10, 15);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0x0c0c0c));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-400, -400, -400);
+
+        let spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 800, 400);
+
+        scene.add(spotLight);
+        scene.add(spotLight2);
+
+        let obj = scene.toJSON();
+
+        console.log(obj);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        /* 轨迹球控件 */
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+        /* 属性参数 */
+        controls.rotateSpeed = 0.2;// 旋转速度
+        controls.zoomSpeed = 0.2;// 缩放速度
+        controls.panSpeed = 0.1;// 平controls
+
+
+        controls.staticMoving = false;// 静止移动，为 true 则没有惯性
+        controls.dynamicDampingFactor = 0.2;// 阻尼系数 越小 则滑动越大
+
+        controls.minDistance = 50; // 最小视角
+        controls.maxDistance = 350;// 最大视角 Infinity 无穷大
+
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.rotateSpeed = controls.rotateSpeed;
+            this.zoomSpeed = controls.zoomSpeed;
+            this.panSpeed = controls.panSpeed;
+            this.staticMoving = controls.staticMoving;
+            this.dynamicDampingFactor = controls.dynamicDampingFactor;
+            this.minDistance = controls.minDistance;
+            this.maxDistance = controls.maxDistance;
+
+        };
+
+        let gui = new dat.GUI();
+
+        gui.add(guiControls, 'rotateSpeed', 0, 1).onChange(function (e) {
+            controls.rotateSpeed = e;
+        });
+        gui.add(guiControls, 'zoomSpeed', 0, 1).onChange(function (e) {
+            controls.zoomSpeed = e;
+        });
+        gui.add(guiControls, 'panSpeed', 0, 1).onChange(function (e) {
+            controls.panSpeed = e;
+        });
+        gui.add(guiControls, 'staticMoving').onChange(function (e) {
+           controls.staticMoving = e;
+        });
+        gui.add(guiControls, 'dynamicDampingFactor', 0, 1).onChange(function (e) {
+            controls.dynamicDampingFactor = e;
+        });
+        gui.add(guiControls, 'minDistance', 0, 500).onChange(function (e) {
+            controls.minDistance = e;
+        });
+        gui.add(guiControls, 'maxDistance', 100, 1000).onChange(function (e) {
+            controls.maxDistance = e;
+        });
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        let mtlLoader = new THREE.MTLLoader();
+        mtlLoader.load('../../models/obj/city.mtl', function (materials) {
+
+            let objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+
+            objLoader.load('../../models/obj/city.obj', function (object) {
+
+                let scale = chroma.scale(['red', 'green', 'blue']);
+
+                setRandomColor(object, scale);
+                scene.add(object);
+
+                document.getElementById('loading').style.display = 'none';
+
+            });
+
+        });
+
+    }
+
+    function setRandomColor(object, scale) {
+
+        let children = object.children;
+
+        if (children && children.length > 0) {
+
+            children.forEach(function (e) {
+
+                setRandomColor(e, scale);
+
+            });
+
+        } else {
+
+            if (object instanceof THREE.Mesh) {
+
+                for (let i = 0; i < object.material.length; i++) {
+
+                    let material = object.material;
+
+                    if (material[i].name.indexOf('building') === 0) {
+
+                        material[i].emissive = new THREE.Color(scale(Math.random()).hex());
+                        material[i].transparent = true;
+                        material[i].opacity = 0.7;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+        controls.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init end...");
+    })();
+
+</script>
+</body>
+</html>

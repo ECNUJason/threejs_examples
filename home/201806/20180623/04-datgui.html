@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>加入dat.GUI调试插件</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <script src="../../libs/jquery-1.9.1.js"></script>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+
+</head>
+<body>
+
+<div id="WebGL-output"></div>
+<script>
+
+    $(function () {
+
+        // 创建场景
+        var scene = new THREE.Scene();
+
+        // 创建相机
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+        // 创建渲染器
+        var webGLRenderer = new THREE.WebGLRenderer();
+
+        // 配置相机
+        camera.position.set(200, 150, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        // 配置渲染器
+        webGLRenderer.antialias = true;
+        webGLRenderer.autoClear = true;
+        webGLRenderer.setClearColor(0x050505);
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+
+        webGLRenderer.shadowMap.enabled = true;
+
+        // 创建灯光
+        var ambientLight = new THREE.AmbientLight({color: 0x404040});
+        scene.add(ambientLight);
+
+        // 添加光源
+        var spotLight = new THREE.SpotLight(0xcccccc);
+        spotLight.position.set(-100, 300, 10);
+        spotLight.castShadow = true;
+        // 定义阴影的分辨率
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
+        scene.add(spotLight);
+
+
+        // 创建平面
+        var planeGeometry = new THREE.PlaneGeometry(200, 400);
+        var planeMaterial = new THREE.MeshLambertMaterial({color : 0x6D6565});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+
+        // 绕x轴旋转90度
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.y = -10;
+        plane.position.x = -10;
+        plane.position.z = -80;
+        scene.add(plane);
+
+        // 创建立方体
+        var cubeGeometry = new THREE.CubeGeometry(50, 50, 50);
+        var cubeMaterial = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff});
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+         scene.add(cube);
+
+        // 创建球体
+        var sphereGeometry = new THREE.SphereGeometry(25,20,20);
+        var sphereMaterial = new THREE.MeshLambertMaterial({color : Math.random() * 0xffffff});
+        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+
+        // 保存可以修改的对象和属性
+        var controls = new function(){
+            // 立方体可调式属性
+            this.cubeRotationSpeed = 0.01;
+            this.cubePositionX = 10;
+            this.cubePositionY = 35;
+            this.cubePositionZ = -30;
+
+            // 球体可调试属性
+            this.spherePositionX = 8;
+            this.spherePositionY = 34;
+            this.spherePositionZ = -25;
+            this.sphereWireframe = sphereMaterial.wireframe;
+            this.sphereColor = sphereMaterial.color.getStyle();
+
+            //平面可调试属性
+            this.planeColor = planeMaterial.color.getStyle();
+
+            // 场景可调试属性
+            this.sceneBackground = webGLRenderer.getClearColor().getHex();
+            // 灯光
+            this.spotLight = false;
+            // 立方体
+            this.cube = false;
+            // 平面
+            this.plane = false;
+            // 下拉选择
+            this.selectMesh = "cube";
+        }
+        // 初始化 dat.GUI对象，便于调试
+        var gui = new dat.GUI();
+
+        // 立方对象体调试栏目
+        var cubeControls = gui.addFolder("CubeControl");
+        cubeControls.add(controls,"cubeRotationSpeed",0, 0.5);
+        cubeControls.add(controls,"cubePositionX",-70,70);
+        cubeControls.add(controls,"cubePositionY",35,85);
+        cubeControls.add(controls,"cubePositionZ",-200,100);
+        cubeControls.add(controls,"cubePositionX").listen();
+        cubeControls.add(controls,"cubePositionY").listen();
+        cubeControls.add(controls,"cubePositionZ").listen();
+
+        // 球体对象调试栏目
+        var sphereControls = gui.addFolder("SphereControl");
+        sphereControls.add(controls,"spherePositionX",0,100);
+        sphereControls.add(controls,"spherePositionY",0,100);
+        sphereControls.add(controls,"spherePositionZ",-200,100);
+        sphereControls.add(controls,"sphereWireframe").onChange(function (e) {
+            sphereMaterial.wireframe = e;
+        });
+        sphereControls.addColor(controls,"sphereColor").onChange(function (e) {
+           sphereMaterial.color.setStyle(e);
+        });
+
+        // 平面调试对象
+        var planeControls = gui.addFolder("PlaneControl");
+        planeControls.addColor(controls,"planeColor").onChange(function (e) {
+           planeMaterial.color.setStyle(e);
+        });
+
+        // 场景调试对象
+        var sceneControls = gui.addFolder("SceneControl");
+        sceneControls.addColor(controls,"sceneBackground").onChange(function (e) {
+            webGLRenderer.setClearColor(e);
+        });
+        sceneControls.add(controls,"spotLight").onChange(function (e) {
+            e ? scene.remove(spotLight) : scene.add(spotLight);
+        });
+        sceneControls.add(controls,"cube").onChange(function (e) {
+            e ? scene.remove(cube) : scene.add(cube);
+        });
+        sceneControls.add(controls,"plane").onChange(function (e) {
+            e ? scene.remove(plane) : scene.add(plane);
+        });
+        sceneControls.add(controls,"selectMesh", ["cube","sphere"]).onChange(function (e) {
+           scene.remove(cube);
+           scene.remove(sphere);
+           
+           switch (e){
+               case "cube":
+                   scene.add(cube);
+               break;
+               case  "sphere":
+                   scene.add(sphere);
+               break;
+           }
+           scene.add(e);
+           // close方法，用来折叠controls
+            // destroy 用来销毁插件
+            //gui.remove("CubeControl");//移除调试目录不能使用
+        });
+
+        // 绕轴旋转
+        var pivotPoint = new THREE.Object3D();
+        pivotPoint.add(sphere);
+        cube.add(pivotPoint);
+
+
+        // 把渲染的页面添加到div
+        $("#WebGL-output").append(webGLRenderer.domElement);
+
+        function render(){
+            // 让立方体 绕坐标轴旋转
+            cube.rotation.x += controls.cubeRotationSpeed;
+            cube.rotation.y += controls.cubeRotationSpeed;
+            cube.rotation.z += controls.cubeRotationSpeed;
+
+            cube.position.x = controls.cubePositionX;
+            cube.position.y = controls.cubePositionY;
+            cube.position.z = controls.cubePositionZ;
+
+            sphere.position.x = controls.spherePositionX;
+            sphere.position.y = controls.spherePositionY;
+            sphere.position.z = controls.spherePositionZ;
+
+
+            // 开始渲染
+            webGLRenderer.render(scene, camera);
+        }
+
+        //加入动画效果
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+        animate();
+
+    });
+
+</script>
+
+</body>
+</html>

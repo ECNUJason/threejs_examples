@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>保存和加载模型</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+
+    let scene, camera, renderer, controls, guiControls, cylinder;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(5, 5, 20);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数默认 */
+
+    }
+
+    /* 调试插件 */
+    let loadedMesh;
+
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.radiusTop = cylinder.geometry.parameters.radiusTop;
+            this.radiusBottom = cylinder.geometry.parameters.radiusBottom;
+            this.height = cylinder.geometry.parameters.height;
+            this.radialSegments = cylinder.geometry.parameters.radialSegments;
+            this.redraw = function () {
+                /* 移除模型重新绘制 */
+                scene.remove(cylinder);
+
+                cylinder = createMesh(new THREE.CylinderGeometry(
+                    guiControls.radiusTop,
+                    guiControls.radiusBottom,
+                    guiControls.height,
+                    guiControls.radialSegments));
+
+                scene.add(cylinder);
+            };
+            this.save = function () {
+
+                localStorage.setItem('cylinder', JSON.stringify(cylinder.toJSON()));
+
+            };
+            this.load = function () {
+
+                let cylinderJson = localStorage.getItem('cylinder');
+
+                if (cylinderJson) {
+
+                    scene.remove(loadedMesh);
+
+                    // 将 cylinderJson 字符串转换为 json 对象
+                    let loadedGeometry = JSON.parse(cylinderJson);
+
+                    console.log(loadedGeometry);
+
+                    // 解析 json 对象
+                    let loader = new THREE.ObjectLoader();
+                    loadedMesh = loader.parse(loadedGeometry);
+
+                    loadedMesh.position.x = -10;
+
+                    console.log(loadedMesh);
+
+                    scene.add(loadedMesh);
+
+                    // 加载完之后清除本地存储
+                    localStorage.clear();
+
+                }
+
+            };
+        };
+
+        let controls = new dat.GUI({width: 300});
+        controls.add(guiControls, 'radiusTop', 1, 5).onChange(guiControls.redraw);
+        controls.add(guiControls, 'radiusBottom', 1, 5).onChange(guiControls.redraw);
+        controls.add(guiControls, 'height', 1, 10).onChange(guiControls.redraw);
+        controls.add(guiControls, 'radialSegments', 3, 20).onChange(guiControls.redraw);
+        controls.add(guiControls, 'save');
+        controls.add(guiControls, 'load');
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        let cylinderGeometry = new THREE.CylinderGeometry(2, 2, 5, 3);
+
+        cylinder = new createMesh(cylinderGeometry);
+        cylinder.name = '测试';
+
+        // let json = cylinder.toJSON();
+        // let jsonString = JSON.stringify(json);
+        //
+        // alert(jsonString);
+
+        scene.add(cylinder);
+
+    }
+
+    /* 创建网格 */
+    function createMesh(geometry) {
+
+        let material = new THREE.MeshNormalMaterial();
+        let mesh = new THREE.Mesh(geometry, material);
+
+        return mesh;
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init send...");
+    })();
+
+</script>
+</body>
+</html>

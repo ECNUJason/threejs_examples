@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    // 检查浏览器是否支持
+    if (typeof(Storage) !== "undefined" || window.localStorage) {
+
+        document.body.innerText = '支持 localStorge！';
+
+    } else {
+
+        document.body.innerText = '不支持！';
+
+    }
+</script>
+</body>
+</html>

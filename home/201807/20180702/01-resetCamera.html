@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制字体模型</title>
+    <style>
+
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+
+    <script src="../../libs/examples/js/Detector.js"></script>
+
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+
+    <script src="../../libs/extend/ThreeBSP.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<script>
+
+    var stats = initStats();
+
+    var scene, camera, renderer, controls, light, gui;
+
+    init();
+    animate();
+
+    function initScene() {
+        scene = new THREE.Scene();
+    }
+
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 200, 300);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    function initRenderer() {
+        if (Detector.webgl){
+            renderer = new THREE.WebGLRenderer({antialias : true, autoClear : true});
+        }else{
+            renderer = new THREE.CanvasRenderer();
+        }
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor( 0x050505 );
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        document.body.appendChild(renderer.domElement);
+    }
+
+    function initLight() {
+        light = new THREE.SpotLight( 0xEEDFCC );
+        light.position.set(-100, 200, 100);
+        light.castShadow = true;
+
+        scene.add(light);
+        scene.add(new THREE.AmbientLight( 0xD1D1D1 ));
+    }
+
+    function initGui() {
+        gui = new function () {
+            
+        }
+        var guiControls = new dat.GUI();
+    }
+
+    function initContent() {
+        var helper = new THREE.GridHelper(1200, 60, 0xCD3700, 0x424242);
+        scene.add(helper);
+
+        var text = 'three.js';
+        // 使用FontLoader加载字体
+        var loader = new THREE.FontLoader();
+        loader.load('../../libs/examples/fonts/gentilis_regular.typeface.json', function (response) {
+            // 文字配置
+            var fontCfg = {
+                font : response,
+                size : 80,
+                height: 5,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 10,
+                bevelSize: 8,
+                bevelSegments: 5
+            };
+            // TextGeometry文本几何对象
+            var fontGeometry = new THREE.TextGeometry(text,fontCfg);
+            fontGeometry.computeBoundingBox();//绑定盒子模型
+
+            // 文字的材质
+            var fontMaterial = new THREE.MeshNormalMaterial();
+            var font = new THREE.Mesh(fontGeometry, fontMaterial);
+
+            // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+            font.position.x = -(fontGeometry.boundingBox.max.x - fontGeometry.boundingBox.min.x) / 2;
+
+            scene.add(font);
+        });
+
+    }
+
+    function initControls() {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+    // 键盘监听方法
+    function onKeyDown(event) {
+        switch (event.keyCode){
+            case 13: //按下 enter 键时触发
+                // 重新初始化相机和控制器
+                initCamera();
+                initControls();
+                break;
+        }
+    }
+
+    function onWindowResize(event) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+
+    function initStats() {
+        var stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    function update() {
+        stats.update();
+        controls.update();
+    }
+
+    function init() {
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initContent();
+        initControls();
+        initGui();
+        addEventListener('resize', onWindowResize, false);
+        addEventListener('keydown', onKeyDown, false);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+</script>
+</body>
+</html>

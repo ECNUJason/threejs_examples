@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>从加载进来的模型生成粒子系统</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;/* 溢出隐藏 */
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/loaders/PLYLoader.js"></script>
+
+</head>
+<body>
+<p id="loading">loading......</p>
+<script>
+
+    let scene, camera, renderer, controls, guiControls;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(-10, 13, 25);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0x0c0c0c));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-100, -100, -100);
+
+        let spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(100, 100, 100);
+
+        scene.add(spotLight);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数默认 */
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+        };
+
+        let controls = new dat.GUI({width: 300});
+
+    }
+
+    /* 场景中的内容 */
+    let loadGeometry;
+    let points;
+
+    function initContent() {
+
+        let loader = new THREE.PLYLoader();
+        loader.load('../../models/ply/test.ply', function (obj) {
+
+            console.log(obj);
+            obj.computeVertexNormals();
+            loadGeometry = obj.clone();
+
+            var material = new THREE.MeshStandardMaterial({color: 0x7FFF00, flatShading: true});
+            var mesh = new THREE.Mesh(loadGeometry, material);
+            mesh.translateZ(5);
+            mesh.translateY(2);
+            scene.add(mesh);
+
+            let mateial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.05,
+                opacity: 0.5,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                map: generateSprite()
+            });
+
+            points = new THREE.Points(loadGeometry, mateial);
+            points.translateZ(-5);
+            points.translateY(2);
+            scene.add(points);
+            document.getElementById('loading').style.display = 'none';
+        });
+
+
+    }
+
+    // from THREE.js examples
+    function generateSprite() {
+
+        let canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+
+        let context = canvas.getContext('2d');
+        let gradient = context.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.2, 'rgba(0,255,255,1)');
+        gradient.addColorStop(0.4, 'rgba(0,0,64,1)');
+        gradient.addColorStop(1, 'rgba(0,0,0,1)');
+
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        let texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+
+    }
+
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        document.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init send...");
+    })();
+
+</script>
+</body>
+</html>

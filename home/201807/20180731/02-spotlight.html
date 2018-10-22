@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spotlight 锥形光源</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;/*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, spotLight, controls, guiControls;
+    let shadowCameraHelper, spotLightHelper;
+
+    // 场景
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    // 相机
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-100, 300, 300);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    // 渲染器
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        // 设置渲染器的像素比例，按照设备
+        renderer.setPixelRatio(window.devicePixelRatio);
+        // 渲染背景色
+        renderer.setClearColor(0x050505);
+        // 渲染范围
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // 开启阴影支持
+        renderer.shadowMap.enabled = true;
+        // 阴影类型
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    // 灯光
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xCCCCCC));
+
+        spotLight = new THREE.SpotLight();
+        spotLight.color = new THREE.Color(0xffffff);
+
+        spotLight.castShadow = true;
+
+        spotLight.position.set(-80, 180, -80);
+
+        // 光的强度 默认值为1
+        spotLight.intensity = 1;
+        // 从发光点发出的距离，光的亮度，会随着距离的远近线性衰减
+        spotLight.distance = 350;
+        // 光色散角度，默认是 Math.PI * 2
+        spotLight.angle = 0.4;
+        // 光影的减弱程度，默认值为0， 取值范围 0 -- 1之间
+        spotLight.penumbra = 0.1;
+        // 光在距离上的量值, 和光的强度类似（衰减指数）
+        spotLight.decay = 1;
+
+        // 设置阴影分辨率
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+
+        // 投影近点 --> 从距离光源的哪一才产生阴影
+        spotLight.shadow.camera.near = 0.1;
+        // 投影原点 --> 到光源的哪一点位置不产生阴影
+        spotLight.shadow.camera.far = 300;
+        // 投影视场
+        spotLight.shadow.camera.fov = 40;
+
+        scene.add(spotLight);
+
+        // 阴影相机助手
+        shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+        scene.add(shadowCameraHelper);
+
+        // 聚光光源助手
+        spotLightHelper = new THREE.SpotLightHelper(spotLight);
+        scene.add(spotLightHelper);
+    }
+
+    // 控制器
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+        // 最大偏移角度
+        controls.maxPolarAngle = 0.45 * Math.PI;
+        // 进制移动
+        controls.noPan = true;
+        // 旋转速度
+        controls.rotateSpeed = 0.05;
+        // 最大可视距离
+        controls.maxDistance = 500;
+        // 最小可视距离
+        controls.minDistance = 100;
+
+    }
+
+    // 调试插件
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.spotLightColor = 0xffffff;
+            this.intensity = 1;
+            this.distance = 350;
+            this.angle = 0.4;
+            this.penumbra = 0.1;
+            this.castShadow = true;
+            this.decay = 1;
+
+        };
+
+        let gui = new dat.GUI();
+
+        gui.addColor(guiControls, 'spotLightColor').onChange(function (e) {
+            spotLight.color = new THREE.Color(e);
+        });
+
+        gui.add(guiControls, 'intensity', 0, 4).onChange(function (e) {
+            spotLight.intensity = e;
+        });
+
+        gui.add(guiControls, 'distance', 200, 500).onChange(function (e) {
+            spotLight.distance = e;
+        });
+
+        gui.add(guiControls, 'angle', 0, 1).onChange(function (e) {
+            spotLight.angle = e;
+        });
+
+        gui.add(guiControls, 'penumbra', 0, 1).onChange(function (e) {
+            spotLight.penumbra = e;
+        });
+
+        gui.add(guiControls, 'castShadow').onChange(function (e) {
+            spotLight.castShadow = e;
+        });
+
+        gui.add(guiControls, 'decay', 0, 1).onChange(function (e) {
+            spotLight.decay = e;
+        });
+
+    }
+
+    // 场景中的内容
+    function initContent() {
+
+        // 接收阴影的片面段，也会对阴影产生一定的效果，片面段越多，阴影分辨率越清晰
+        let planeGeometry = new THREE.PlaneGeometry(300, 300, 300, 300);
+        let planeMaterial = new THREE.MeshLambertMaterial({color: 0x666666});
+        let plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        // 绕 x 轴旋转 -90 度
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.receiveShadow = true;
+
+        scene.add(plane);
+
+        let cubeGeometry = new THREE.CubeGeometry(20, 5, 10);
+        let cubeMaterial = new THREE.MeshLambertMaterial({color: 0x99CCCC});
+        let cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+        cube.position.y = 15;
+
+        scene.add(cube);
+
+    }
+
+    // 性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    // 更新
+    function update() {
+
+        stats.update();
+        controls.update();
+        shadowCameraHelper.update();
+        spotLightHelper.update();
+
+    }
+
+    // 初始化
+    function init() {
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    // 窗口变动触发的方法
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    // 循环渲染
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    // 页面绘制完后加载
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

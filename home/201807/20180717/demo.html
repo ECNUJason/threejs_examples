@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Demo</title>
+    <style type="text/css">
+        body {
+            background-color:#1d1d1d;
+            font-family: "Asap", sans-serif;
+            color:#989898;
+            margin:10px;
+            font-size:16px;
+        }
+
+        #demo {
+            height:100%;
+            position:relative;
+            overflow:hidden;
+        }
+        .box {
+            width:100px;
+            height:100px;
+            position:relative;
+            border-radius:6px;
+            margin-top:4px;
+            text-align:center;
+            line-height:100px;
+            color:black;
+            font-size:80px;
+        }
+
+        .green{
+            background-color:#6fb936;
+        }
+    </style>
+</head>
+<body>
+<div id="demo">
+    <div class="box green" id="greenBox">0</div>
+</div>
+<script type="text/javascript" src="js/TweenMax.js"></script>
+<script type="text/javascript">
+    //basic illustration of TweenMax's repeat, repeatDelay, yoyo and onRepeat
+    var box = document.getElementById("greenBox"),
+        count = 0,
+        tween;
+
+    tween = TweenMax.to(box, 2, {left:"740px", repeat:10, yoyo:true, onRepeat:onRepeat, repeatDelay:0.5, ease:Linear.easeNone});
+
+    function onRepeat() {
+        count++;
+        box.innerHTML = count;
+        TweenLite.set(box, {backgroundColor:"hsl(" + Math.random() * 255 + ", 90%, 60%)"});
+    }
+</script>
+</body>
+</html>

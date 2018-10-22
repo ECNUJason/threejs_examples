@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/extend/THREEx.WindowResize.js"></script>
+    <script src="../../libs/tween/Tween.js"></script>
+    <script src="../../libs/jquery-1.9.1.js"></script>
+</head>
+<body>
+
+<script>
+    let scene, camera, renderer, controls;
+    let stats = initStats();
+
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 300, 600);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    function initControls() {
+
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+    }
+
+    function initModels() {
+
+        let helper = new THREE.GridHelper(1200, 60, 0xCD3333, 0x4A4A4A);
+        scene.add(helper);
+
+        let cubeGeometry = new THREE.SphereGeometry(20, 50, 50);
+        let cubeMaterial = new THREE.MeshLambertMaterial({color: 0x9370DB});
+        let cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.y = 25;
+        cube.position.x = -400;
+        cube.name = 'cube';
+        scene.add(cube);
+
+
+        /*1、创建一个画布，记得设置画布的宽高，否则将使用默认宽高，有可能会导致图像显示变形*/
+        let canvas = document.createElement("canvas");
+        canvas.width = 120;
+        canvas.height = 120;
+        /*2、创建图形，这部分可以去看w3c canvas教程*/
+        let ctx = canvas.getContext("2d");
+
+
+
+
+        // ctx.fillStyle = "#ff0000";
+        // ctx.arc(50,50,50,0,2*Math.PI);
+        // ctx.fill();
+        // /*3、将canvas作为纹理，创建Sprite*/
+        // let texture = new THREE.Texture(canvas);
+        // texture.needsUpdate = true; //注意这句不能少
+        // let material = new THREE.SpriteMaterial({map:texture});
+        // let mesh = new THREE.Sprite(material);
+        // /*4、放大图片，每个精灵有自己的大小，默认情况下都是很小的，如果你不放大，基本是看不到的*/
+        // mesh.scale.set(100,100,1);
+
+
+        ctx.strokeStyle = 'rgb(150,0,150)';
+        ctx.fillStyle = 'rgba(0,0,150,0.6)';
+        ctx.lineWidth = 7;
+        drawRoundedRect(ctx, 300, 100, 250, 150, 8, true, false);
+        /*3、将canvas作为纹理，创建Sprite*/
+        let texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true; //注意这句不能少
+        let material = new THREE.SpriteMaterial({map:texture});
+        let mesh = new THREE.Sprite(material);
+        /*4、放大图片，每个精灵有自己的大小，默认情况下都是很小的，如果你不放大，基本是看不到的*/
+        mesh.scale.set(100,100,1);
+
+        scene.add(mesh);
+
+
+    }
+
+    // 绘制圆角矩形
+    function drawRoundedRect(ctx, x, y, width, height, r, fill, stroke) {
+        ctx.save();
+        ctx.beginPath();
+        // draw top and top right corner
+        ctx.moveTo(x + r, y); ctx.arcTo(x + width, y, x + width, y + r, r);
+        // draw right side and bottom right corner
+        ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+        // draw bottom and bottom left corner
+        ctx.arcTo(x, y + height, x, y + height - r, r); // draw left and top left corner
+        ctx.arcTo(x, y, x + r, y, r);
+        if (fill) {
+            ctx.fill();
+        }
+        if (stroke) {
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+
+    function initLight() {
+
+        let spotLight = new THREE.SpotLight(0xE3E3E3);
+        spotLight.position.set(-100, 200, 300);
+        scene.add(spotLight);
+
+        scene.add(new THREE.AmbientLight(0xB3B3B3));
+
+    }
+
+    function initStats() {
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    function initTween() {
+
+        let tweenSphere = new TWEEN.Tween(scene.getObjectByName('cube').position);
+        tweenSphere.to({x:400}, 2000);
+        // tweenCube.easing(TWEEN.Easing.Elastic.InOut);
+        tweenSphere.start();
+        tweenSphere.onUpdate(function () {
+            console.log("x: "+this.x);
+        });
+
+        let tweenSphereBack = new TWEEN.Tween(scene.getObjectByName('cube').position);
+        tweenSphereBack.to({x:-400}, 2000);
+        tweenSphere.chain(tweenSphereBack);
+        tweenSphereBack.chain(tweenSphere);
+
+
+    }
+
+    function init() {
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initControls();
+        initModels();
+        initLight();
+        // initTween();
+        THREEx.WindowResize(renderer, camera);
+
+    }
+
+    function update() {
+        // TWEEN.update();
+        stats.update();
+        controls.update();
+
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    init();
+    animate();
+
+
+</script>
+
+</body>
+</html>

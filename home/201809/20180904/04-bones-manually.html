@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>用骨骼和蒙皮制作动画</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/tween/Tween.js"></script>
+</head>
+<body>
+<p id="loading">loading......</p>
+<script>
+
+    let scene, camera, renderer, controls, guiControls, tween;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, -50, -20);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0x0c0c0c));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-400, -400, -400);
+
+        let spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 800, 400);
+
+        scene.add(spotLight);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        /* 地图控件 */
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数 */
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+            this.skeletonHelper = true;
+
+        };
+
+        let gui = new dat.GUI();
+        gui.add(guiControls, 'skeletonHelper').onChange(function (e) {
+
+            skeletonHelper.visible = e;
+
+        });
+
+    }
+
+    /* 场景中的内容 */
+    let mesh;
+    let skeletonHelper;
+    function initContent() {
+
+        let loader= new THREE.JSONLoader();
+        loader.load('../../models/json/hand-1.json', function (geometry) {
+
+            let material = new THREE.MeshNormalMaterial({skinning: true});
+            // 创建骨骼变形网格
+            mesh = new THREE.SkinnedMesh(geometry, material);
+            mesh.scale.set(10, 10, 10);
+
+            scene.add(mesh);
+
+            skeletonHelper = new THREE.SkeletonHelper(mesh);
+            skeletonHelper.material.linewidth = 3;
+            scene.add(skeletonHelper);
+
+            tween.start();
+
+            removeLoading();
+        });
+
+    }
+
+    /* 初始化补间动画 */
+    function initTween() {
+
+        let callback = function () {
+
+            let pos = this.pos;
+
+            // 旋转手指
+            mesh.skeleton.bones[5].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[6].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[10].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[11].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[15].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[16].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[20].rotation.set(0, 0, pos);
+            mesh.skeleton.bones[21].rotation.set(0, 0, pos);
+
+            // 旋转手腕
+            mesh.skeleton.bones[1].rotation.set(pos, 0, 0);
+        };
+
+        tween = new TWEEN.Tween({pos: -1})
+            .to({pos:0}, 3000)
+            .easing(TWEEN.Easing.Cubic.InOut)
+            .yoyo(true)
+            .repeat(Infinity)
+            .onUpdate(callback);
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+    /* 移除加载元素 */
+    function removeLoading() {
+
+        document.getElementById('loading').style.display = 'none';
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        TWEEN.update();
+
+        stats.update();
+
+        controls.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+        initTween();
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init end...");
+    })();
+
+</script>
+</body>
+</html>

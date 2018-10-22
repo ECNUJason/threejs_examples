@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>定义几何体</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+
+    <script src="../../libs/examples/js/Detector.js"></script>
+
+    <script src="../../libs/examples/js/controls/TrackballControls.js"></script>
+
+    <script src="../../libs/examples/js/utils/SceneUtils.js"></script>
+</head>
+<body>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
+
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, light, gui, controls;
+
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 300, 400);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    function initRenderer() {
+
+        if (Detector.webgl) {
+
+            renderer = new THREE.WebGLRenderer({antialias: true});
+
+        } else {
+
+            renderer = new THREE.CanvasRenderer();
+
+        }
+
+        renderer.setClearColor(0x050505);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        document.getElementById('WebGL-output').appendChild(renderer.domElement);
+
+    }
+
+    function initGui() {
+
+        gui = new function () {
+
+        };
+
+        let guiControls = new dat.GUI();
+
+    }
+
+    function initLight() {
+
+        light = new THREE.SpotLight(0xffffff);
+        light.castShadow = true;
+        light.position.set(-100, 300, 100);
+
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xcccccc));
+
+    }
+
+    function initControls() {
+
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+        controls.maxDistance = 2000;
+        controls.minDistance = 200;
+
+        controls.noPan = true;
+
+    }
+
+    function initContent() {
+
+        let helper = new THREE.GridHelper(1200, 60, 0xCD3700, 0x4A4A4A);
+        scene.add(helper);
+
+        let vertices = [
+
+            new THREE.Vector3(1, 3, 1),
+            new THREE.Vector3(1, 3, -1),
+            new THREE.Vector3(1, -1, 1),
+            new THREE.Vector3(1, -1, -1),
+            new THREE.Vector3(-1, 3, -1),
+            new THREE.Vector3(-1, 3, 1),
+            new THREE.Vector3(-1, -1, -1),
+            new THREE.Vector3(-1, -1, 1)
+
+        ];
+
+        let faces = [
+
+            new THREE.Face3(0, 2, 1),
+            new THREE.Face3(2, 3, 1),
+            new THREE.Face3(4, 6, 5),
+            new THREE.Face3(6, 7, 5),
+            new THREE.Face3(4, 5, 1),
+            new THREE.Face3(5, 0, 1),
+            new THREE.Face3(7, 6, 2),
+            new THREE.Face3(6, 3, 2),
+            new THREE.Face3(5, 7, 0),
+            new THREE.Face3(7, 2, 0),
+            new THREE.Face3(1, 3, 4),
+            new THREE.Face3(3, 6, 4)
+
+        ];
+
+        let geometry = new THREE.Geometry();
+
+        geometry.vertices = vertices;
+        geometry.faces = faces;
+        geometry.computeFaceNormals();
+
+        let materials = [
+
+            new THREE.MeshLambertMaterial({transparent : true, opacity : 0.6, color : 0x9F79EE}),
+            new THREE.MeshBasicMaterial({color : 0x000, wireframe : true})
+
+        ];
+        // 使用SceneUtils创建多材质对象
+        let mesh = new THREE.SceneUtils.createMultiMaterialObject(geometry, materials);
+        mesh.scale.set(50, 50, 50);
+        scene.add(mesh);
+
+    }
+
+    // 初始化性能插件
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.setMode(0);
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.getElementById("Stats-output").appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    function init() {
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initContent();
+
+        initControls();
+        initGui();
+    }
+
+    function update() {
+
+        stats.update();
+        controls.update();
+
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    init();
+    animate();
+
+</script>
+
+</body>
+</html>

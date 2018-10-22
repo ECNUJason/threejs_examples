@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ShapeGeometry 自定义二维几何体</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /*溢出隐藏*/
+        }
+    </style>
+    <script src="../../libs/build/three-r93.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/utils/SceneUtils.js"></script>
+</head>
+<body>
+<script>
+
+    let stats = initStats();
+    let scene, camera, renderer, controls, guiControls;
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 10, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRenderer() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xCCCCCC));
+
+        let spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(100, 500, 400);
+        scene.add(spotLight);
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // 添加惯性
+        controls.enableDamping = true;
+
+    }
+
+    /* 调试插件 */
+    let gui;
+    function initGui() {
+
+        guiControls = new function () {
+
+
+
+        };
+
+        gui = new dat.GUI({width:300});
+
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        
+
+    }
+    /* 绘制二维图形 */
+    function drawShape() {
+
+        // 实例化 Shape 对象
+        let shape = new THREE.Shape();
+
+        // 开始点的位置
+        shape.moveTo(10, 10);
+
+        // 从起点绘制直线到当前位置
+        shape.lineTo(10, 40);
+
+        // 绘制已一条曲线到30 40
+        shape.bezierCurveTo(15, 25, 25, 25, 30, 40);
+
+        // 设置一条通过所有顶点的光滑曲线
+        shape.splineThru([new THREE.Vector2(32, 30), new THREE.Vector2(28, 20), new THREE.Vector2(30, 10)]);
+
+        // 设置曲线回到顶点
+        shape.quadraticCurveTo(20, 15, 10, 10);
+
+        // 添加第一个 hole
+        let hole1 = new THREE.Path();
+        hole1.absellipse(16, 24, 2, 3, 0, Math.PI * 2, true);
+        shape.holes.push(hole1);
+
+        // 添加第二个 hole
+        let hole2 = new THREE.Path();
+        hole2.absellipse(23, 24, 2, 3, 0, Math.PI * 2, true);
+        shape.holes.push(hole2);
+
+        // 添加嘴巴，半个圆
+        let hole3 = new THREE.Path();
+        hole3.absarc(20, 16, 2, 0, Math.PI, true);
+        shape.holes.push(hole3);
+
+        // 返回 shape
+        return shape;
+
+    }
+    /*  */
+    function createMesh() {
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+    }
+
+    /* 更新 */
+    function update() {
+
+        stats.update();
+        controls.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        // 兼容性判断，若不兼容会提示信息
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRenderer();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 窗口变动触发的方法 */
+    function onWindowResize() {
+
+        // 重新设置相机的宽高比
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        // 更新相机投影矩阵
+        camera.updateProjectionMatrix();
+
+        // 更新渲染器大小
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+    }
+
+    /* 页面绘制完后加载 */
+    window.onload = function () {
+
+        init();
+        animate();
+
+    };
+
+</script>
+</body>
+</html>

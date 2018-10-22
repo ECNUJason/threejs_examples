@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>使用环境贴图创建虚假的反光效果</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+    <script src="../../libs/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+<p id="loading">loading......</p>
+<script>
+
+    let scene, camera, renderer, controls, guiControls;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.CubeTextureLoader().setPath('../../textures/cube/Park2/')
+            .load( [
+                'posx.jpg',
+                'negx.jpg',
+                'posy.jpg',
+                'negy.jpg',
+                'posz.jpg',
+                'negz.jpg'
+            ] );
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 10, 100);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.gammaOutput = true;
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        let hemisphereLight = new THREE.HemisphereLight(0xbbbbff, 0x444422);
+        scene.add(hemisphereLight);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        /* 地图控件 */
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数 */
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+
+        };
+
+        let gui = new dat.GUI();
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        let material = new THREE.MeshPhongMaterial();
+        material.envMap = scene.background;
+
+        let sphereGeometry = new THREE.SphereGeometry(20, 60, 60);
+
+
+        let boxGeometry = new THREE.BoxGeometry(30, 30, 30);
+        let box = new THREE.Mesh(boxGeometry, material);
+
+        let sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.translateX(-45);
+        box.translateX(45);
+
+        let loader = new THREE.GLTFLoader();
+        loader.load('../../models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf', function (gltf) {
+
+            gltf.scene.traverse(function (child) {
+
+                if (child.isMesh) {
+                    child.scale.set(25, 25, 25);
+                    child.material.envMap = scene.background;
+                }
+
+            });
+
+            scene.add(gltf.scene);
+            scene.add(box);
+            scene.add(sphere);
+
+            removeLoading();
+
+        });
+
+    }
+
+    /* 移除加载元素 */
+    function removeLoading() {
+
+        document.getElementById('loading').style.display = 'none';
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+        controls.update();
+
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init end...");
+    })();
+
+</script>
+</body>
+</html>
