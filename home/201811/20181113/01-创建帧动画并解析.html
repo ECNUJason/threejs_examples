@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>创建帧动画并解析</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+
+    var scene, camera, renderer, controls;
+    var clock = new THREE.Clock();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(100, 100, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        var spotLight1 = new THREE.SpotLight(0xffffff);
+        spotLight1.position.set(-400, -400, -400);
+
+        var spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 400, 400);
+
+        scene.add(spotLight1);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    }
+
+    var mixer;
+
+    function initContent() {
+
+        var axesHelper = new THREE.AxesHelper(100);
+        scene.add(axesHelper);
+
+        var group = new THREE.Group();
+
+        var geometry = new THREE.BoxGeometry(10, 10, 10);
+        var material = new THREE.MeshLambertMaterial({color: 0xff0000});
+
+        var box1 = new THREE.Mesh(geometry, material);
+        var box2 = new THREE.Mesh(geometry, material);
+        var box3 = new THREE.Mesh(geometry, material);
+        box1.name = 'box1';
+        box2.name = 'box2';
+        box3.name = 'box3';
+
+        group.add(box1, box2, box3);
+
+        scene.add(group);
+
+        /*1、创建帧动画序列 KeyframeTrack */
+        var times = [0, 10];
+
+        /* 离散的时间点序列 */
+        var position_x = [0, 0, 0, 100, 0, 0];
+        var position_y = [0, 0, 0, 0, 100, 0];
+        var position_z = [0, 0, 0, 0, 0, 100];
+
+        /* 在 times 时间执行的过渡值  Float32Array 类型 */
+        var values_color = [1, 1, 0, 0, 0, 1];
+        /* 颜色过渡值 */
+
+        /* 创建 KeyframeTrack 对象 0 -- 10 之内位置变化*/
+        var box1_Keyframe = new THREE.KeyframeTrack('box1.position', times, position_x);
+        var box2_Keyframe = new THREE.KeyframeTrack('box2.position', times, position_y);
+        var box3_Keyframe = new THREE.KeyframeTrack('box3.position', times, position_z);
+
+        /* 0 -- 10 之内颜色的变化 */
+        var color_Keyframe = new THREE.KeyframeTrack('box3.material.color', times, values_color);
+
+        /* 2、 剪辑keyframeTrack 对象 */
+        var duration = 10;
+
+        /* 多个帧动画创建一个 剪辑对象 命名为 boxAnimation */
+        var clip = new THREE.AnimationClip('boxAnimation', duration, [
+            box1_Keyframe,
+            box2_Keyframe,
+            box3_Keyframe,
+            color_Keyframe
+        ]);
+
+        /* 3、播放编辑好的动画对象 */
+        mixer = new THREE.AnimationMixer(group);
+
+        var action = mixer.clipAction(clip);
+
+        /* 可以调节播放速度 默认值为 1 */
+        action.timeScale = 5;
+
+        /* 开始播放 */
+
+        action.setLoop(THREE.LoopPingPong, 4).play();
+
+    }
+
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        controls.update();
+        mixer.update(clock.getDelta());
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+        mixer.addEventListener('loop', function (e) {
+            console.log('帧动画循环回调：', e);
+        });
+
+        mixer.addEventListener('finished', function (e) {
+            console.log('帧动画结束回调：', e);
+        })
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        init();
+        animate();
+    })();
+
+</script>
+</body>
+</html>
