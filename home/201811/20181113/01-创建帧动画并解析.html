@@ -78,11 +78,14 @@
         var group = new THREE.Group();
 
         var geometry = new THREE.BoxGeometry(10, 10, 10);
+
         var material = new THREE.MeshLambertMaterial({color: 0xff0000});
+        var materia2 = new THREE.MeshLambertMaterial({color: 0x00ff00});
+        var materia3 = new THREE.MeshLambertMaterial({color: 0x0000ff});
 
         var box1 = new THREE.Mesh(geometry, material);
-        var box2 = new THREE.Mesh(geometry, material);
-        var box3 = new THREE.Mesh(geometry, material);
+        var box2 = new THREE.Mesh(geometry, materia2);
+        var box3 = new THREE.Mesh(geometry, materia3);
         box1.name = 'box1';
         box2.name = 'box2';
         box3.name = 'box3';
@@ -100,26 +103,32 @@
         var position_z = [0, 0, 0, 0, 0, 100];
 
         /* 在 times 时间执行的过渡值  Float32Array 类型 */
-        var values_color = [1, 1, 0, 0, 0, 1];
+        var color_r = [1, 0, 0, 0, 1, 0];
+        var color_g = [0, 1, 0, 0, 0, 1];
+        var color_b = [0, 0, 1, 1, 0, 0];
         /* 颜色过渡值 */
 
         /* 创建 KeyframeTrack 对象 0 -- 10 之内位置变化*/
-        var box1_Keyframe = new THREE.KeyframeTrack('box1.position', times, position_x);
-        var box2_Keyframe = new THREE.KeyframeTrack('box2.position', times, position_y);
-        var box3_Keyframe = new THREE.KeyframeTrack('box3.position', times, position_z);
+        var pos1_Keyframe = new THREE.KeyframeTrack('box1.position', times, position_x);
+        var pos2_Keyframe = new THREE.KeyframeTrack('box2.position', times, position_y);
+        var pos3_Keyframe = new THREE.KeyframeTrack('box3.position', times, position_z);
 
         /* 0 -- 10 之内颜色的变化 */
-        var color_Keyframe = new THREE.KeyframeTrack('box3.material.color', times, values_color);
+        var color1_Keyframe = new THREE.KeyframeTrack('box1.material.color', times, color_r);
+        var color2_Keyframe = new THREE.KeyframeTrack('box2.material.color', times, color_g);
+        var color3_Keyframe = new THREE.KeyframeTrack('box3.material.color', times, color_b);
 
         /* 2、 剪辑keyframeTrack 对象 */
         var duration = 10;
 
         /* 多个帧动画创建一个 剪辑对象 命名为 boxAnimation */
         var clip = new THREE.AnimationClip('boxAnimation', duration, [
-            box1_Keyframe,
-            box2_Keyframe,
-            box3_Keyframe,
-            color_Keyframe
+            pos1_Keyframe,
+            pos2_Keyframe,
+            pos3_Keyframe,
+            color1_Keyframe,
+            color2_Keyframe,
+            color3_Keyframe
         ]);
 
         /* 3、播放编辑好的动画对象 */
