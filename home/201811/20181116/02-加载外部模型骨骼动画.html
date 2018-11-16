@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>加载外部模型谷歌动画</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+
+    var scene, camera, renderer, controls, mixer;
+    var clock = new THREE.Clock();
+    var group = new THREE.Group();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+        scene.background = new THREE.CubeTextureLoader().setPath('skybox/').load([ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ]);
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(1, 0, 1.5);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        var spotLight1 = new THREE.SpotLight(0xffffff);
+        spotLight1.position.set(-400, -400, -400);
+
+        var spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 400, 400);
+
+        scene.add(spotLight1);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    }
+    var skinnedMesh;
+    function initContent() {
+
+        var loader = new THREE.JSONLoader();
+
+        loader.load('bf109e/bf109e.json', function (geometry, materials) {
+
+
+            materials.forEach(elem => {
+                elem.skinning = true;
+            });
+
+            skinnedMesh = new THREE.SkinnedMesh(geometry, materials);
+
+            group.add(skinnedMesh);
+
+            scene.add(group);
+
+            // 将模型作为参数创建一个混合器
+            mixer = new THREE.AnimationMixer(skinnedMesh);
+
+            // 解析飞行状态对应剪辑对象
+            var action = mixer.clipAction(skinnedMesh.geometry.animations[0]);
+            action.timeScale = 10;
+            action.play();
+
+            console.log(skinnedMesh);
+
+        });
+
+    }
+
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        controls.update();
+
+        if (mixer !== undefined ) {
+            mixer.update(clock.getDelta());
+        }
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+
+        init();
+        animate();
+
+    })();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../../../three.png">
+    <title>加载外部模型谷歌动画</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+        }
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+
+    var scene, camera, renderer, controls, mixer;
+    var clock = new THREE.Clock();
+    var group = new THREE.Group();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(100, 0, 200);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        var spotLight1 = new THREE.SpotLight(0xffffff);
+        spotLight1.position.set(-400, -400, -400);
+
+        var spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 400, 400);
+
+        scene.add(spotLight1);
+        scene.add(spotLight2);
+
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    }
+
+    var armSkeleton;
+    function initContent() {
+
+        // 创建一个简单的"手臂"
+        var bones = [];
+
+        var shoulder = new THREE.Bone();
+        var elbow = new THREE.Bone();
+        var hand = new THREE.Bone();
+
+        shoulder.add(elbow);
+        elbow.add(hand);
+
+        bones.push(shoulder);
+        bones.push(elbow);
+        bones.push(hand);
+
+        elbow.position.y = 60;
+        hand.position.y = 40;
+
+        armSkeleton = new THREE.Skeleton(bones);
+
+        var geometry = new THREE.CylinderGeometry(3, 7, 120, 50, 10);
+        geometry.translate(0, 60, 0);
+
+        /**
+         * 设置几何体对象Geometry的蒙皮索引skinIndices、权重skinWeights属性
+         * 实现一个模拟腿部骨骼运动的效果
+         */
+        //遍历几何体顶点，为每一个顶点设置蒙皮索引、权重属性
+        //根据y来分段，0~60一段、60~100一段、100~120一段
+        for (var i = 0; i < geometry.vertices.length; i++) {
+
+            var vertex = geometry.vertices[i]; //第i个顶点
+
+            if (vertex.y <= 60) {
+
+                // 设置每个顶点蒙皮索引属性  受根关节Bone1影响
+                geometry.skinIndices.push(new THREE.Vector4(0, 0, 0, 0));
+                // 设置每个顶点蒙皮权重属性
+                // 影响该顶点关节Bone1对应权重是1-vertex.y/60
+                geometry.skinWeights.push(new THREE.Vector4(1 - vertex.y / 60, 0, 0, 0));
+
+            } else if (60 < vertex.y && vertex.y <= 60 + 40) {
+
+                // Vector4(1, 0, 0, 0)表示对应顶点受关节Bone2影响
+                geometry.skinIndices.push(new THREE.Vector4(1, 0, 0, 0));
+                // 影响该顶点关节Bone2对应权重是1-(vertex.y-60)/40
+                geometry.skinWeights.push(new THREE.Vector4(1 - (vertex.y - 60) / 40, 0, 0, 0));
+
+            } else if (60 + 40 < vertex.y && vertex.y <= 60 + 40 + 20) {
+
+                // Vector4(2, 0, 0, 0)表示对应顶点受关节Bone3影响
+                geometry.skinIndices.push(new THREE.Vector4(2, 0, 0, 0));
+                // 影响该顶点关节Bone3对应权重是1-(vertex.y-100)/20
+                geometry.skinWeights.push(new THREE.Vector4(1 - (vertex.y - 100) / 20, 0, 0, 0));
+
+            }
+
+        }
+
+        // 材质对象
+        var material = new THREE.MeshPhongMaterial({
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.5,
+            skinning: true,
+        });
+
+        var mesh = new THREE.SkinnedMesh(geometry, material);
+        mesh.translateY(-60);
+
+        var rootBone = armSkeleton.bones[0];
+        mesh.add(rootBone);
+
+        //将骨架绑定到网格
+        mesh.bind(armSkeleton);
+
+        //移动骨骼并操纵模型
+        armSkeleton.bones[0].rotation.x = -0.1;
+        armSkeleton.bones[1].rotation.x = 0.2;
+
+        // 骨骼辅助线显示
+        var helper = new THREE.SkeletonHelper(mesh);
+        scene.add(helper);
+
+        scene.add(mesh);
+        console.log(mesh);
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    var n = 0;
+    var T = 50;
+    var step = 0.01;
+    function update() {
+
+        controls.update();
+
+        if (armSkeleton !== undefined) {
+
+            n += 1;
+            if (n < T) {
+                // 改变骨关节角度
+                armSkeleton.bones[0].rotation.x = armSkeleton.bones[0].rotation.x - step;
+                armSkeleton.bones[1].rotation.x = armSkeleton.bones[1].rotation.x + step;
+                armSkeleton.bones[2].rotation.x = armSkeleton.bones[2].rotation.x + 2 * step;
+            }
+            if (n < 2 * T && n > T) {
+                armSkeleton.bones[0].rotation.x = armSkeleton.bones[0].rotation.x + step;
+                armSkeleton.bones[1].rotation.x = armSkeleton.bones[1].rotation.x - step;
+                armSkeleton.bones[2].rotation.x = armSkeleton.bones[2].rotation.x - 2 * step;
+            }
+            if (n === 2 * T) {
+                n = 0;
+            }
+
+        }
+
+
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+
+        init();
+        animate();
+
+    })();
+
+</script>
+</body>
+</html>
