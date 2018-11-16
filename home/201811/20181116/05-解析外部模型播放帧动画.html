@@ -17,14 +17,11 @@
 
     var scene, camera, renderer, controls, mixer;
     var clock = new THREE.Clock();
-    var group = new THREE.Group();
 
     /* 场景 */
     function initScene() {
 
         scene = new THREE.Scene();
-
-        scene.background = new THREE.CubeTextureLoader().setPath('skybox/').load([ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ]);
 
     }
 
@@ -32,7 +29,7 @@
     function initCamera() {
 
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-        camera.position.set(1, 0, 1.5);
+        camera.position.set(150, 100, 150);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     }
@@ -50,13 +47,13 @@
     /* 灯光 */
     function initLight() {
 
-        scene.add(new THREE.AmbientLight(0xffffff));
+        scene.add(new THREE.AmbientLight(0xCCCCCC));
 
         var spotLight1 = new THREE.SpotLight(0xffffff);
-        spotLight1.position.set(-400, -400, -400);
+        spotLight1.position.set(-1000, -1000, -1000);
 
         var spotLight2 = new THREE.SpotLight(0xffffff);
-        spotLight2.position.set(400, 400, 400);
+        spotLight2.position.set(1000, 1000, 1000);
 
         scene.add(spotLight1);
         scene.add(spotLight2);
@@ -69,40 +66,36 @@
         controls = new THREE.OrbitControls(camera, renderer.domElement);
 
     }
-    var skinnedMesh;
+
     function initContent() {
+
+        var axesHelper = new THREE.AxesHelper( 50 );
+        scene.add( axesHelper );
 
         var loader = new THREE.JSONLoader();
 
-        loader.load('bf109e/bf109e.json', function (geometry, materials) {
+        loader.load('bird/flamingo.json', function (geometry,) {
 
+            //  通过平面发现来计算顶点发现,使平面更光滑
+            geometry.computeVertexNormals();
 
-            materials.forEach(elem => {
-                elem.skinning = true;
+            var material = new THREE.MeshPhongMaterial({
+                morphTargets:true,
+                vertexColors:THREE.FaceColors
             });
 
-            skinnedMesh = new THREE.SkinnedMesh(geometry, materials);
+            var mesh = new THREE.Mesh(geometry, material);
 
-            group.add(skinnedMesh);
+            scene.add(mesh);
+            console.log(mesh);
+            mixer = new THREE.AnimationMixer(mesh);
 
-            scene.add(group);
-            console.log(skinnedMesh);
+            var animationAction = mixer.clipAction(geometry.animations[0]);
+            animationAction.play();
 
-
-            // 将模型作为参数创建一个混合器
-            mixer = new THREE.AnimationMixer(skinnedMesh);
-
-            // 解析飞行状态对应剪辑对象
-            var action = mixer.clipAction(skinnedMesh.geometry.animations[0]);
-            action.timeScale = 10;
-            action.play();
-
-            console.log(skinnedMesh);
-
-        });
+        })
 
     }
-
 
     /* 窗口变动触发 */
     function onWindowResize() {

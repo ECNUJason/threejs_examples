@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="../../../three.png">
-    <title>加载外部模型谷歌动画</title>
     <style>
         body {
             margin: 0;
@@ -49,13 +48,13 @@
     /* 灯光 */
     function initLight() {
 
-        scene.add(new THREE.AmbientLight(0xffffff));
+        scene.add(new THREE.AmbientLight(0xCCCCCC));
 
         var spotLight1 = new THREE.SpotLight(0xffffff);
-        spotLight1.position.set(-400, -400, -400);
+        spotLight1.position.set(-1000, -1000, -1000);
 
         var spotLight2 = new THREE.SpotLight(0xffffff);
-        spotLight2.position.set(400, 400, 400);
+        spotLight2.position.set(1000, 1000, 1000);
 
         scene.add(spotLight1);
         scene.add(spotLight2);
@@ -98,8 +97,21 @@
         // 设置关键帧数据, 修改变形目标的去权重值
         var track1 = new THREE.KeyframeTrack('.morphTargetInfluences[0]', [0, 10, 20], [0, 1, 0]);
         var track2 = new THREE.KeyframeTrack('.morphTargetInfluences[1]', [20, 30, 40], [0, 1, 0]);
-    }
 
+        // 创建剪辑对象 持续时间 40 秒
+        var clip = new THREE.AnimationClip('default',  40, [track1, track2]);
+
+        // 播放编辑好的数据
+        mixer = new THREE.AnimationMixer(box);
+
+        // 获得动画操纵对象
+        var animationAction = mixer.clipAction(clip);
+        animationAction.timeScale = 5;
+        animationAction.loop = THREE.LoopOnce;
+        animationAction.clampWhenFinished = true;
+        animationAction.play();
+
+    }
 
     /* 窗口变动触发 */
     function onWindowResize() {
