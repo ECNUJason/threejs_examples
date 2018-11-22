@@ -36,8 +36,9 @@
 </head>
 <body>
 <video id="video" autoplay loop muted>
-    <source src="../../textures/video/sintel.ogv">
-    <source src="../../textures/video/sintel.mp4">
+    <source src="../../textures/video/test.mp4">
+    <!--<source src="../../textures/video/sintel.ogv">-->
+    <!--<source src="../../textures/video/sintel.mp4">-->
 </video>
 <p id="loading">loading......</p>
 
@@ -103,7 +104,7 @@
     /* 场景中的内容 */
     function initContent() {
 
-        let planeGeometry = new THREE.PlaneGeometry(10, 5);
+        let planeGeometry = new THREE.PlaneGeometry(5, 10);
         let material = new THREE.MeshPhongMaterial();
         material.side = THREE.DoubleSide;
 
@@ -112,6 +113,7 @@
         scene.add(mesh);
 
         let video = document.getElementById('video');
+        console.log(video);
         let texture = new THREE.VideoTexture(video);
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
