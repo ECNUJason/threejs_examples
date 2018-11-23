@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="icon" href="../../../three.png">
+    <title>使用videoTexture用视频作为输出纹理</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* 溢出隐藏 */
+            background: url("../../images/bg_network.jpg") center no-repeat;
+            -webkit-background-size: cover;
+            background-size: cover;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: #FFFFFF;
+            font-size: 20px;
+            margin-top: -30px;
+            margin-left: -40px;
+        }
+        /*#video {*/
+            /*position: absolute;*/
+            /*width: 0;*/
+            /*height: 0;*/
+        /*}*/
+    </style>
+    <script src="../../libs/build/three-r93.js"></script>
+    <script src="../../libs/examples/js/Detector.js"></script>
+    <script src="../../libs/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../../libs/examples/js/libs/stats.min.js"></script>
+</head>
+<body>
+<video id="video" autoplay loop muted>
+    <!--<source src="../../textures/video/sintel.ogv">-->
+    <!--<source src="../../textures/video/sintel.mp4">-->
+    <!--<source src="https://ithanmang.gitee.io/threejs/home/textures/video/sintel.mp4">-->
+</video>
+<p id="loading">loading......</p>
+
+<script>
+
+    let scene, camera, renderer, guiControls;
+    let mouseX = 0, mouseY = 0;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 0, 8);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+
+        renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearAlpha(0.5);
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        scene.add(new THREE.AmbientLight(0x0c0c0c));
+
+        let spotLight1 = new THREE.SpotLight(0xffffff);
+        spotLight1.position.set(-400, -400, -400);
+
+        let spotLight2 = new THREE.SpotLight(0xffffff);
+        spotLight2.position.set(400, 400, 400);
+
+        scene.add(spotLight1);
+        scene.add(spotLight2);
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+        };
+
+        let gui = new dat.GUI();
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+
+        var video_dom = document.createElement('video');
+
+        video_dom.setAttribute('loop', '');
+        video_dom.setAttribute('autoplay', '');
+        video_dom.setAttribute('src', 'https://ithanmang.gitee.io/threejs/home/textures/video/sintel.mp4');
+        console.log(video_dom);
+
+        document.body.appendChild(video_dom);
+
+        let planeGeometry = new THREE.PlaneGeometry(10, 5);
+        let material = new THREE.MeshPhongMaterial();
+        material.side = THREE.DoubleSide;
+
+        let mesh = new THREE.Mesh(planeGeometry, material);
+
+        scene.add(mesh);
+
+        let video = document.getElementById('video');
+        console.log(video);
+        let texture = new THREE.VideoTexture(video);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.format = THREE.RGBFormat;
+
+        material.map = texture;
+
+        removeLoading();
+
+
+    }
+
+    /* 移除加载元素 */
+    function removeLoading() {
+
+        document.getElementById('loading').style.display = 'none';
+
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    function onDocumentMouseMove(event) {
+
+        mouseX = (event.clientX - window.innerWidth / 2) * 0.01;
+        mouseY = (event.clientY - window.innerHeight / 2) * 0.01;
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+        camera.position.x += (mouseX - camera.position.x) * 0.005;
+        camera.position.y += (-mouseY - camera.position.y) * 0.005;
+        camera.lookAt(scene.position);
+
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init end...");
+    })();
+
+</script>
+</body>
+</html>
