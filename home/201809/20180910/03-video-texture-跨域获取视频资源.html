@@ -23,11 +23,11 @@
             margin-top: -30px;
             margin-left: -40px;
         }
-        /*#video {*/
-            /*position: absolute;*/
-            /*width: 0;*/
-            /*height: 0;*/
-        /*}*/
+        #video {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
     </style>
     <script src="../../libs/build/three-r93.js"></script>
     <script src="../../libs/examples/js/Detector.js"></script>
@@ -35,11 +35,11 @@
     <script src="../../libs/examples/js/libs/stats.min.js"></script>
 </head>
 <body>
-<video id="video" autoplay loop muted>
-    <!--<source src="../../textures/video/sintel.ogv">-->
-    <!--<source src="../../textures/video/sintel.mp4">-->
-    <!--<source src="https://ithanmang.gitee.io/threejs/home/textures/video/sintel.mp4">-->
-</video>
+<!--<video id="video" autoplay loop muted>-->
+    <!--&lt;!&ndash;<source src="../../textures/video/sintel.ogv">&ndash;&gt;-->
+    <!--&lt;!&ndash;<source src="../../textures/video/sintel.mp4">&ndash;&gt;-->
+    <!--&lt;!&ndash;<source src="https://ithanmang.gitee.io/threejs/home/textures/video/sintel.mp4">&ndash;&gt;-->
+<!--</video>-->
 <p id="loading">loading......</p>
 
 <script>
@@ -108,10 +108,10 @@
 
         video_dom.setAttribute('loop', '');
         video_dom.setAttribute('autoplay', '');
-        video_dom.setAttribute('src', 'https://ithanmang.gitee.io/threejs/home/textures/video/sintel.mp4');
+        video_dom.setAttribute('src', '../../textures/video/sintel.mp4');
         console.log(video_dom);
 
-        document.body.appendChild(video_dom);
+        // document.body.appendChild(video_dom);
 
         let planeGeometry = new THREE.PlaneGeometry(10, 5);
         let material = new THREE.MeshPhongMaterial();
@@ -123,7 +123,7 @@
 
         let video = document.getElementById('video');
         console.log(video);
-        let texture = new THREE.VideoTexture(video);
+        let texture = new THREE.VideoTexture(video_dom);
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
         texture.format = THREE.RGBFormat;
